@@ -13,12 +13,16 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"image/color"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"golang.org/x/term"
+
+	"github.com/haleh/git-farm/farm"
 	"github.com/haleh/git-farm/internal/cache"
 	"github.com/haleh/git-farm/internal/gitlog"
 	"github.com/haleh/git-farm/internal/repo"
@@ -37,6 +41,14 @@ func main() {
 
 func run() error {
 	var (
+		themeName  = flag.String("theme", "quiet", "quiet or full; quiet leaves the terminal's own background showing")
+		colorName  = flag.String("color", "auto", "auto, full, 256, 16 or none")
+		noColor    = flag.Bool("no-color", false, "shorthand for --color none; NO_COLOR does the same")
+		names      = flag.Bool("names", true, "write directory names on the fields and say who committed last")
+		night      = flag.Bool("night", false, "draw the farm at night")
+		width      = flag.Int("width", 0, "terminal columns (default: fit the window)")
+		height     = flag.Int("height", 0, "terminal rows (default: fit the window)")
+		asList     = flag.Bool("list", false, "print the fields as a table instead of a picture")
 		asJSON     = flag.Bool("json", false, "print the parsed repository as JSON and stop")
 		since      = flag.String("since", "5y", "ignore history older than this, measured back from the newest commit")
 		maxCommits = flag.Int("max-commits", 0, "read at most this many commits; 0 means all of them")
@@ -52,6 +64,18 @@ func run() error {
 	if *showVer {
 		fmt.Println("git-farm " + version)
 		return nil
+	}
+
+	theme := farm.ThemeNamed(*themeName)
+	if theme == nil {
+		return fmt.Errorf("unknown theme %q: try quiet or full", *themeName)
+	}
+	profile, ok := farm.ParseProfile(*colorName)
+	if !ok {
+		return fmt.Errorf("unknown colour setting %q: try auto, full, 256, 16 or none", *colorName)
+	}
+	if *noColor {
+		profile = farm.Mono
 	}
 
 	dir := "."
@@ -93,11 +117,144 @@ func run() error {
 		enc.SetIndent("", "  ")
 		return enc.Encode(r)
 	}
+	if *asList {
+		fmt.Print(summary(r))
+		return nil
+	}
 
-	// The picture is the next phase. Until then, print what the picture will be
-	// drawn from — which is also the answer to every "why is this field grey".
-	fmt.Print(summary(r))
+	return drawFarm(r, drawing{
+		theme:   theme,
+		profile: profile,
+		names:   *names,
+		night:   *night,
+		width:   *width,
+		height:  *height,
+	})
+}
+
+type drawing struct {
+	theme         *farm.Theme
+	profile       farm.Profile
+	names, night  bool
+	width, height int
+}
+
+// drawFarm prints one frame and exits. The animated version is the TUI, later.
+func drawFarm(r *repo.Repo, d drawing) error {
+	cols, rows := windowSize(d.width, d.height)
+	if cols < farm.MinCols || rows < farm.MinRows {
+		// Refusing to draw badly. A farm squeezed into a window this size is
+		// not a smaller picture, it is an unreadable one.
+		return fmt.Errorf("the farm needs a window of at least %d×%d; this one is %d×%d",
+			farm.MinCols, farm.MinRows, cols, rows)
+	}
+	if len(r.Files) == 0 {
+		return fmt.Errorf("no files in the window --since kept: try a longer --since")
+	}
+
+	scene := farm.FromRepo(r)
+	opts := farm.Options{Theme: d.theme, Night: d.night, Names: d.names}
+	picture := scene.Render(cols, rows, opts, d.profile)
+
+	// Drawn is only known once the scene has been laid out against a real
+	// window: how many fields fit is a property of the window, not the repo.
+	if scene.Drawn() == 0 {
+		return fmt.Errorf("nothing to draw: no directory in this repository has enough files for a field")
+	}
+
+	fmt.Println(picture)
+	fmt.Print(legend(d.theme, d.profile, cols))
+	if d.names {
+		fmt.Print(caption(r, scene, d.profile))
+	}
 	return nil
+}
+
+// windowSize fits the farm to the terminal, leaving room underneath for the
+// legend, and stops it from spreading so wide that it stops being one picture.
+func windowSize(width, height int) (cols, rows int) {
+	const (
+		maxCols  = 120
+		reserved = 6 // the blank line, the legend, the caption
+	)
+
+	cols, rows = 100, 32
+	if w, h, err := term.GetSize(int(os.Stdout.Fd())); err == nil && w > 20 {
+		cols, rows = w, h-reserved
+	}
+	if cols > maxCols {
+		cols = maxCols
+	}
+
+	if width > 0 {
+		cols = width
+	}
+	if height > 0 {
+		rows = height
+	}
+	return cols, rows
+}
+
+// legend is what makes the picture readable the first time somebody sees it.
+func legend(t *farm.Theme, p farm.Profile, cols int) string {
+	type item struct {
+		glyph, text string
+		colour      color.RGBA
+	}
+
+	items := []item{
+		{"█", "changed lately", t.Colour(farm.RoleLeaf)},
+		{"█", "churn: many authors, one file", t.Colour(farm.RoleWeed)},
+		{"█", "quiet for a year", t.Colour(farm.RoleDry)},
+		{"█", "a big file, and the farmer", t.Colour(farm.RoleShirt)},
+		{"─", "test files found", t.Colour(farm.RoleFence)},
+		{"┄", "none found", t.Colour(farm.RoleFence)},
+		{"┘", "no rule here, so no claim", t.Colour(farm.RoleFence)},
+	}
+
+	// Wrapped by the width of the words, not of the string: the escape codes in
+	// it are not characters anybody sees.
+	const indent, gap = 2, 3
+	var out, line strings.Builder
+	width := indent
+
+	for _, it := range items {
+		w := len([]rune(it.glyph)) + 1 + len([]rune(it.text))
+		if line.Len() > 0 {
+			if width+gap+w > cols {
+				out.WriteString(strings.Repeat(" ", indent) + line.String() + "\n")
+				line.Reset()
+				width = indent
+			} else {
+				line.WriteString(strings.Repeat(" ", gap))
+				width += gap
+			}
+		}
+		line.WriteString(p.Paint(it.glyph, it.colour) + " " + it.text)
+		width += w
+	}
+	if line.Len() > 0 {
+		out.WriteString(strings.Repeat(" ", indent) + line.String() + "\n")
+	}
+	return out.String()
+}
+
+// caption says who is standing in the picture, and where. It is the one place
+// the farm names a person, which is why --names turns it off.
+func caption(r *repo.Repo, s *farm.Scene, p farm.Profile) string {
+	if r.LastAuthor == "" {
+		return ""
+	}
+
+	where := r.LastDir
+	if s.Farmer >= 0 {
+		where = s.Fields[s.Farmer].Name
+	}
+	if where == "" {
+		return ""
+	}
+
+	return "  " + p.Paint(r.LastAuthor+" committed last, in "+where, farm.Quiet.Colour(farm.RoleLabel)) + "\n"
 }
 
 // load returns the parsed repository, from the cache when the cache still
