@@ -167,3 +167,57 @@ var quietSprites = SpriteSet{
 		".O..O",
 	}},
 }
+
+// ---- the set for a file, rather than for a terminal --------------------
+//
+// The quiet set above is sparse because it has to be: it sits on top of
+// somebody's session and must not cover it. An SVG has nothing behind it, and
+// it is looked at from further away than a terminal, so the same rules can be
+// spent on a fuller shape.
+//
+// The rules do not change, only the room to obey them in:
+//
+//	shape  a live plant stands up and opens out, a weed sprawls and knots,
+//	       a dead one bends over
+//	ink    5 pixels for dead, 12 for live, 18 for churn
+//
+// Both are tested for this set exactly as they are for the quiet one.
+var svgSprites = SpriteSet{
+	Plant: Sprite{Key: key, Art: []string{ // 14 pixels: leafy, upright
+		"..H..",
+		".HLH.",
+		"HLLLH",
+		".HLH.",
+		"..S..",
+		"..S..",
+	}},
+	Tall: Sprite{Key: key, Art: []string{ // the same plant, grown
+		"..H..",
+		".HLH.",
+		"HLLLH",
+		"HLLLH",
+		".HLH.",
+		"..S..",
+		"..S..",
+		".S.S.",
+		"..S..",
+	}},
+	Weed: Sprite{Key: key, Art: []string{ // 18 pixels: knotted, and two stems
+		"W.W.W",
+		".WWW.",
+		"WWGWW",
+		".WGW.",
+		".W.W.",
+		"W...W",
+	}},
+	Dry: Sprite{Key: key, Art: []string{ // 5 pixels, and it bends over
+		".....",
+		"..D..",
+		".D...",
+		".T...",
+		".T...",
+		".T...",
+	}},
+	Farmer:     fullSprites.Farmer,
+	FarmerWalk: fullSprites.FarmerWalk,
+}

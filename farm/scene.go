@@ -25,8 +25,14 @@ type Field struct {
 	Counts Counts  // what stands in the field
 	Weight float64 // how much of the farm this field gets: its file count
 
-	rect Rect // filled in by Layout
+	rect Rect // filled in by Fit
 }
+
+// Bounds is where the field ended up, in canvas pixels. It is zero until the
+// scene has been laid out, and stays zero for a field the window had no room
+// for. The SVG writer needs it to draw fences and names as real vector shapes
+// rather than as pixels.
+func (f Field) Bounds() Rect { return f.rect }
 
 // A Scene is a whole farm: the fields, and who is standing in one of them.
 type Scene struct {
@@ -47,6 +53,17 @@ type Options struct {
 	Names  bool // draw the directory name on each field
 	Walk   int  // animation frame for the farmer: 0 or 1
 	Offset int  // how far the farmer has walked, in pixels
+
+	// Vector says the caller will draw the fences and the names itself, in a
+	// medium that has real lines and real text. The terminal has neither, so it
+	// spends a character cell on each; SVG has both, and a fence drawn as
+	// box-drawing glyphs there would depend on the reader having a font with
+	// them in it.
+	Vector bool
+
+	// NoFarmer leaves the farmer out, for a caller that draws them separately —
+	// which is what animating them without redrawing the whole farm requires.
+	NoFarmer bool
 }
 
 func (o Options) theme() *Theme {
@@ -246,34 +263,49 @@ func (s *Scene) Draw(c *Canvas, o Options) {
 		dim(c, t, 0, skyH, c.W, c.H-skyH, 0.5)
 	}
 
-	s.drawFarmer(c, t, o)
+	if !o.NoFarmer {
+		s.drawFarmer(c, t, o)
+	}
+}
+
+// FarmerSpot is where the farmer stands: the top-left corner of the sprite, and
+// how far along the field they can walk from there. It reports false when no
+// field is big enough to hold one.
+//
+// The SVG writer asks for this too, so that the farmer can be animated over a
+// background that never changes.
+func (s *Scene) FarmerSpot(t *Theme) (x, y, span int, ok bool) {
+	if s.Farmer < 0 || s.Farmer >= len(s.Fields) {
+		return 0, 0, 0, false
+	}
+	r := s.Fields[s.Farmer].rect
+	if farmerRoom(t, r) == 0 {
+		return 0, 0, 0, false // too small to stand in without trampling it
+	}
+
+	sprite := t.Sprites.Farmer
+	return r.X + 3, r.Y + r.H - sprite.H() - 2, maxInt(0, r.W-sprite.W()-6), true
 }
 
 // drawFarmer puts the author of the newest commit in the field that commit
 // touched. It is the one part of the picture about a person rather than a file.
 func (s *Scene) drawFarmer(c *Canvas, t *Theme, o Options) {
-	if s.Farmer < 0 || s.Farmer >= len(s.Fields) {
+	x, y, span, ok := s.FarmerSpot(t)
+	if !ok {
 		return
-	}
-	r := s.Fields[s.Farmer].rect
-	if farmerRoom(t, r) == 0 {
-		return // the field is too small to stand in without trampling it
 	}
 
 	sprite := t.Sprites.Farmer
 	if o.Walk%2 == 1 {
 		sprite = t.Sprites.FarmerWalk
 	}
-
-	span := r.W - sprite.W() - 6
-	px := r.X + 3
 	if span > 0 && o.Offset > 0 {
-		px += o.Offset % span
+		x += o.Offset % span
 	}
 
-	c.Blit(sprite, px, r.Y+r.H-sprite.H()-2, t)
+	c.Blit(sprite, x, y, t)
 	if o.Night {
-		c.Disc(px+sprite.W()+1, r.Y+r.H-5, 1, t.Colour(RoleLamp))
+		c.Disc(x+sprite.W()+1, y+sprite.H()-2, 1, t.Colour(RoleLamp))
 	}
 }
 
@@ -393,10 +425,47 @@ func drawField(c *Canvas, t *Theme, f Field, o Options, reserve int) {
 	}
 
 	plantField(c, t, f, r.X+2, r.Y+2, r.W-4, r.H-4-reserve)
-	drawFence(c, t, r, f.Fence)
+	from, to, label := 0, 0, ""
 	if o.Names {
-		drawLabel(c, t, r, f.Name)
+		from, to, label = LabelSpan(r, f.Name)
 	}
+
+	if o.Vector {
+		// The caller draws with real lines and real text — but only where the
+		// terminal had to spend characters on them. A glyph border is a
+		// workaround for a terminal having nothing thinner than a pixel, and
+		// SVG does not need it. A wooden fence is not a workaround, it is the
+		// picture, so it stays in the pixels — with a gap left for the name.
+		if t.Border == BorderFence {
+			drawFence(c, t, r, f.Fence, from, to)
+		}
+		return
+	}
+
+	drawFence(c, t, r, f.Fence, 0, 0)
+	if label != "" {
+		// The overlay replaces both pixels of every cell it touches, so it goes
+		// on after the fence and simply takes those cells over.
+		c.SetText(from, r.Y/2, " "+label+" ", t.Colour(RoleLabel))
+	}
+}
+
+// LabelSpan is the run of pixel columns a field's name takes up along its top
+// edge, and the name as it will actually be written.
+//
+// One function, because three things have to agree about it: the character
+// overlay that writes the name in a terminal, the fence that has to leave a
+// hole for it, and the SVG writer that does both of those with real text and
+// real lines. When they disagree, the name is drawn through its own fence.
+func LabelSpan(r Rect, name string) (from, to int, label string) {
+	// Two cells for the corners, two for the space either side of the name, and
+	// two more so the name never runs into the corner it is written beside.
+	label = shorten(name, r.W-6)
+	if label == "" {
+		return 0, 0, ""
+	}
+	from = r.X + 2
+	return from, from + len([]rune(label)) + 2, label
 }
 
 // drawFence draws the field edge, and with it the one claim on the farm that
@@ -406,7 +475,7 @@ func drawField(c *Canvas, t *Theme, f Field, o Options, reserve int) {
 // rules apply here and found none; corners-only means no rule applies and no
 // claim is being made — a Rust file with its tests inline, a directory of SQL
 // migrations, a language nobody has checked the convention for.
-func drawFence(c *Canvas, t *Theme, r Rect, fence Fence) {
+func drawFence(c *Canvas, t *Theme, r Rect, fence Fence, gapFrom, gapTo int) {
 	line, post := t.Colour(RoleFence), t.Colour(RoleFencePost)
 
 	if t.Border == BorderGlyph {
@@ -433,7 +502,10 @@ func drawFence(c *Canvas, t *Theme, r Rect, fence Fence) {
 	}
 
 	for i := 0; i < r.W; i++ {
-		put(i, r.W, r.X+i, r.Y)
+		// The name breaks the top rail, the way a sign nailed to a fence does.
+		if x := r.X + i; x < gapFrom || x >= gapTo {
+			put(i, r.W, x, r.Y)
+		}
 		put(i, r.W, r.X+i, r.Y+r.H-1)
 	}
 	for i := 0; i < r.H; i++ {
@@ -493,29 +565,6 @@ func drawGlyphBorder(c *Canvas, r Rect, line, post color.RGBA, fence Fence) {
 		c.SetRune(r.X, y, v, line)
 		c.SetRune(right, y, v, line)
 	}
-}
-
-// drawLabel writes the directory's name into the top edge of its field.
-//
-// This is the one thing the pixel grid cannot do and the character overlay can:
-// real text, at real text resolution, inside a picture made of half blocks. It
-// is also what turns the farm from a pretty texture into a picture of a
-// particular repository — without the names, nobody recognises their own code.
-func drawLabel(c *Canvas, t *Theme, r Rect, name string) {
-	// Two cells for the corners, two for the space either side of the name, and
-	// two more so the name never runs into the corner it is written beside.
-	room := r.W - 6
-	if room < 4 {
-		return
-	}
-
-	label := shorten(name, room)
-	if label == "" {
-		return
-	}
-
-	x := r.X + 2
-	c.SetText(x, r.Y/2, " "+label+" ", t.Colour(RoleLabel))
 }
 
 // shorten fits a directory path into the space a field has, by dropping leading

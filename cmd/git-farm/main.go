@@ -9,12 +9,14 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"image/color"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -41,7 +43,9 @@ func main() {
 
 func run() error {
 	var (
-		themeName  = flag.String("theme", "quiet", "quiet or full; quiet leaves the terminal's own background showing")
+		themeName  = flag.String("theme", "quiet", "quiet, full, or both (an SVG in light and dark)")
+		out        = flag.String("out", "", "write an SVG here instead of drawing in the terminal")
+		scale      = flag.Int("scale", 6, "SVG units per pixel of the farm")
 		colorName  = flag.String("color", "auto", "auto, full, 256, 16 or none")
 		noColor    = flag.Bool("no-color", false, "shorthand for --color none; NO_COLOR does the same")
 		names      = flag.Bool("names", true, "write directory names on the fields and say who committed last")
@@ -66,9 +70,18 @@ func run() error {
 		return nil
 	}
 
+	// "both" is not a theme, it is a pair of files: the same farm in the two
+	// palettes a README needs, because a file on disk cannot ask the reader
+	// whether their page is light or dark.
 	theme := farm.ThemeNamed(*themeName)
+	if *themeName == "both" {
+		if *out == "" {
+			return fmt.Errorf("--theme both writes two files, so it needs --out")
+		}
+		theme = &farm.QuietLight
+	}
 	if theme == nil {
-		return fmt.Errorf("unknown theme %q: try quiet or full", *themeName)
+		return fmt.Errorf("unknown theme %q: try quiet, full, or both", *themeName)
 	}
 	profile, ok := farm.ParseProfile(*colorName)
 	if !ok {
@@ -122,14 +135,20 @@ func run() error {
 		return nil
 	}
 
-	return drawFarm(r, drawing{
+	d := drawing{
 		theme:   theme,
 		profile: profile,
 		names:   *names,
 		night:   *night,
 		width:   *width,
 		height:  *height,
-	})
+		scale:   *scale,
+		both:    *themeName == "both",
+	}
+	if *out != "" {
+		return writeSVG(r, *out, d)
+	}
+	return drawFarm(r, d)
 }
 
 type drawing struct {
@@ -137,6 +156,8 @@ type drawing struct {
 	profile       farm.Profile
 	names, night  bool
 	width, height int
+	scale         int
+	both          bool
 }
 
 // drawFarm prints one frame and exits. The animated version is the TUI, later.
@@ -397,4 +418,87 @@ found. Nothing leaves the machine.
 flags:
 `)
 	flag.PrintDefaults()
+}
+
+// writeSVG is the file the README points at.
+//
+// The size does not come from the window. Nobody is looking at a terminal when
+// this runs — it runs on a CI machine with no terminal at all — so the picture
+// gets a fixed shape unless one is asked for.
+func writeSVG(r *repo.Repo, path string, d drawing) error {
+	cols, rows := 120, 36
+	if d.width > 0 {
+		cols = d.width
+	}
+	if d.height > 0 {
+		rows = d.height
+	}
+
+	scene := farm.FromRepo(r)
+	opts := farm.SVGOptions{
+		Theme:   d.theme,
+		Cols:    cols,
+		Rows:    rows,
+		Scale:   d.scale,
+		Names:   d.names,
+		Night:   d.night,
+		Animate: true,
+		Title:   svgTitle(r),
+	}
+
+	files := []struct {
+		path  string
+		theme *farm.Theme
+	}{{path, d.theme}}
+	if d.both {
+		files = append(files, struct {
+			path  string
+			theme *farm.Theme
+		}{darkName(path), &farm.Quiet})
+	}
+
+	for _, f := range files {
+		opts.Theme = f.theme
+		var buf bytes.Buffer
+		if err := scene.WriteSVG(&buf, opts); err != nil {
+			return err
+		}
+		if scene.Drawn() == 0 {
+			return fmt.Errorf("nothing to draw: no directory in this repository has enough files for a field")
+		}
+		changed, err := writeIfChanged(f.path, buf.Bytes())
+		if err != nil {
+			return err
+		}
+		if changed {
+			fmt.Fprintln(os.Stderr, "wrote "+f.path)
+		} else {
+			fmt.Fprintln(os.Stderr, "unchanged "+f.path)
+		}
+	}
+	return nil
+}
+
+// writeIfChanged leaves the file alone when it already says the same thing.
+//
+// The output is deterministic, so a repository that has not changed produces
+// the same bytes; not touching the file then makes a re-run genuinely a no-op
+// rather than one that only looks like one to git.
+func writeIfChanged(path string, data []byte) (changed bool, err error) {
+	if old, err := os.ReadFile(path); err == nil && bytes.Equal(old, data) {
+		return false, nil
+	}
+	return true, os.WriteFile(path, data, 0o644)
+}
+
+// darkName is farm.svg -> farm-dark.svg.
+func darkName(path string) string {
+	ext := filepath.Ext(path)
+	return strings.TrimSuffix(path, ext) + "-dark" + ext
+}
+
+func svgTitle(r *repo.Repo) string {
+	name := filepath.Base(r.Root)
+	return fmt.Sprintf("%s drawn as a farm: %s files in %s directories, %s commits",
+		name, comma(len(r.Files)), comma(len(r.Dirs)), comma(r.Commits))
 }

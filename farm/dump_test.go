@@ -167,7 +167,27 @@ func TestMonoWritesNoEscapes(t *testing.T) {
 // shade. Two sprites that mean different things must therefore differ as
 // shapes. This counts the pixels set in one and not the other.
 func TestQuietSilhouettesDiffer(t *testing.T) {
-	set := Quiet.Sprites
+	for _, set := range spriteSets() {
+		t.Run(set.name, func(t *testing.T) { silhouettesDiffer(t, set.set) })
+	}
+}
+
+// The sets whose colours cannot be relied on: the quiet palette's green, amber
+// and purple sit at almost the same lightness in both of them.
+func spriteSets() []struct {
+	name string
+	set  SpriteSet
+} {
+	return []struct {
+		name string
+		set  SpriteSet
+	}{
+		{"terminal", Quiet.Sprites},
+		{"file", svgSprites},
+	}
+}
+
+func silhouettesDiffer(t *testing.T, set SpriteSet) {
 	named := []struct {
 		name string
 		s    Sprite
@@ -216,13 +236,17 @@ func TestQuietInkDensity(t *testing.T) {
 		}
 		return n
 	}
-	set := Quiet.Sprites
-	dry, plant, weed := ink(set.Dry), ink(set.Plant), ink(set.Weed)
-	if !(dry < plant && plant < weed) {
-		t.Errorf("ink must rise dry < plant < weed, got %d, %d, %d", dry, plant, weed)
-	}
-	if weed < 2*dry {
-		t.Errorf("weed (%d) should be at least twice the ink of dry (%d)", weed, dry)
+
+	for _, set := range spriteSets() {
+		dry, plant, weed := ink(set.set.Dry), ink(set.set.Plant), ink(set.set.Weed)
+		if !(dry < plant && plant < weed) {
+			t.Errorf("%s: ink must rise dry < plant < weed, got %d, %d, %d",
+				set.name, dry, plant, weed)
+		}
+		if weed < 2*dry {
+			t.Errorf("%s: weed (%d) should be at least twice the ink of dry (%d)",
+				set.name, weed, dry)
+		}
 	}
 }
 

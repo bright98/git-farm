@@ -47,17 +47,18 @@ committed last, standing where they committed.
 
 ## Status
 
-**Phases 0 and 1 of [the plan](git-farm-plan.md) are done: it reads a repository
-and draws it in the terminal.** Still to come: the SVG for a README (phase 2),
-the GitHub Action that keeps it up to date (phase 3), the TUI (phase 4) and the
+**Phases 0 to 2 of [the plan](git-farm-plan.md) are done: it reads a repository,
+draws it in the terminal, and writes it as an SVG.** Still to come: the GitHub
+Action that keeps the picture up to date (phase 3), the TUI (phase 4) and the
 time-lapse (phase 5).
 
 ```sh
 go build ./cmd/git-farm
-./git-farm                    # this repo, in this window
-./git-farm --theme full       # the painted version, with sky and soil
-./git-farm --list             # the same thing as a table
-./git-farm --json             # the parsed repo, which is what the picture is drawn from
+./git-farm                              # this repo, in this window
+./git-farm --theme full                 # the painted version, with sky and soil
+./git-farm --out farm.svg --theme both  # farm.svg and farm-dark.svg, for a README
+./git-farm --list                       # the same thing as a table
+./git-farm --json                       # the parsed repo, which the picture is drawn from
 ./git-farm ~/src/some-repo
 ```
 
@@ -149,6 +150,46 @@ because the plants are held apart by silhouette and ink density before colour:
 live is 6 pixels and upright, churn is 9 and sprawling, dead is 4 and bent over.
 All three rules are tested.
 
+## The SVG
+
+`--out farm.svg` writes the picture instead of printing it. It is the same farm,
+drawn for a medium that has things a terminal does not.
+
+**One `<path>` per colour.** Each row is cut into runs of one colour, runs that
+sit directly above each other are merged into rectangles, and every rectangle of
+one colour goes into a single path. A 120×72 farm is 8,640 pixels and comes out
+as about seventy elements — 7 KB for the quiet theme, 27 KB for the painted one.
+
+**Real text for the names, real strokes for the fences.** In a terminal, a
+box-drawing glyph is the only thing thinner than a pixel; in SVG a stroke can be
+any width and dashes are real dashes, so the three fence states are a solid
+stroke, a dashed one, and crop marks at the corners. The names are `<text>`, set
+in the gap the fence leaves for them, and they stay sharp at any size. The
+wooden fence of the `full` theme is not replaced — that one is pixel art, and it
+stays in the pixels.
+
+**Fuller plants.** The terminal's sprites are four pixels tall because they sit
+on top of a live session and must not cover it. A file has nothing behind it, so
+it gets a leafier set — which obeys the same tested rules about silhouette and
+ink density, with more room to obey them in.
+
+**Two files, because a file cannot ask.** `--theme both` writes `farm.svg` and
+`farm-dark.svg` with palettes tuned for a white and a dark page; neither paints
+a background, so the README shows through. `--theme full` paints its own little
+world and needs only one file.
+
+**The farmer walks, and nothing else moves.** CSS keyframes over a static
+background — never `<script>`, which GitHub strips. The two frames are swapped
+with `fill-opacity` rather than `opacity`: a README embeds the file with `<img>`,
+which is rendered without a compositor, and the properties normally handed to
+the compositor are the ones at risk of being dropped. `prefers-reduced-motion`
+stops it entirely.
+
+**The same bytes every time.** Colours are sorted rather than taken from a map,
+nothing is timestamped, and the file is not rewritten when it has not changed —
+so a re-run over an unchanged repository is genuinely a no-op, not one that only
+looks like one to git.
+
 ## Refusals
 
 Four cases produce a farm that is quietly wrong, so they produce an error
@@ -166,7 +207,9 @@ instead:
 
 | Flag | Default | |
 |---|---|---|
-| `--theme` | `quiet` | `quiet` or `full` |
+| `--theme` | `quiet` | `quiet`, `full`, or `both` (an SVG in light and dark) |
+| `--out` | | write an SVG here instead of drawing in the terminal |
+| `--scale` | `6` | SVG units per pixel of the farm |
 | `--color` | `auto` | `auto`, `full`, `256`, `16`, `none` |
 | `--no-color` | | shorthand for `--color none`; `NO_COLOR` does the same |
 | `--names` | `true` | directory names on the fields, and who committed last |
@@ -222,7 +265,7 @@ The picture shows directory paths, and the name of whoever committed last.
 | `internal/gitlog/` | runs `git log --numstat` and stream-parses it, including renames |
 | `internal/repo/` | files rolled into directories, and the four kinds decided |
 | `internal/cache/` | the parsed repo, keyed on HEAD |
-| `farm/` | the canvas, the themes, the treemap and the drawing |
+| `farm/` | the canvas, the themes, the treemap, the drawing and the SVG |
 | `git-farm-demo/` | where the drawing layer was worked out — a separate module |
 
 The picture is tested as letters, not as colours: `farm/dump_test.go` prints the
@@ -230,6 +273,12 @@ canvas one character per role, which is what makes a layout bug visible in a
 test log. It caught three of them while this was being written — a field
 silently dropped from the treemap, a farmer standing on top of the plants, and a
 sun with one ray outside the sky.
+
+What is not tested here is the last step of all: whether the animation runs
+inside a GitHub README. It runs when the file is opened in a browser, and the
+mechanism is the one the contribution-snake action uses, but headless Chrome
+will not advance animations in an image document at all — so that claim waits
+for phase 3, which is what puts the file in front of GitHub.
 
 ## License
 

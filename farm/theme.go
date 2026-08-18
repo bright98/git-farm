@@ -225,8 +225,59 @@ func quiet() Theme {
 	return t
 }
 
+// QuietLight is the quiet theme for a page with a white background.
+//
+// The TUI does not need this — lipgloss can ask the terminal which it is and
+// pick per session — but a file on disk cannot ask anybody, so the SVG ships
+// one of these and one of Quiet, and the README picks with prefers-color-scheme.
+//
+// It is not the same palette darkened. The greens and ambers have to gain
+// weight to hold their own against white, and the greys have to lose it:
+// on a dark page dead code recedes by being dim, and on a light one it recedes
+// by being pale.
+var QuietLight = quietLight()
+
+func quietLight() Theme {
+	t := quiet()
+	t.Name = "quiet-light"
+
+	set := func(r Role, c color.RGBA) { t.colours[r] = c }
+
+	accent := rgb(0x7a52c9) // purple, with enough weight for white
+	green := rgb(0x3f8b52)
+	amber := rgb(0x9a7318)
+	faint := rgb(0xb4bcb7) // dead and deleted: pale, so it recedes
+	subtle := rgb(0x9aa29e)
+	label := rgb(0x6b736f)
+
+	set(RoleLeaf, green)
+	set(RoleLeafHi, green)
+	set(RoleStem, green)
+	set(RoleWeed, amber)
+	set(RoleWeedHi, amber)
+	set(RoleDry, faint)
+	set(RoleDryStem, faint)
+
+	set(RoleHat, accent)
+	set(RoleSkin, rgb(0x3a3f3c))
+	set(RoleShirt, accent)
+	set(RolePants, subtle)
+	set(RoleBoots, subtle)
+	set(RoleLamp, rgb(0xd9a520))
+
+	set(RoleSun, rgb(0xd9a520))
+	set(RoleMoon, rgb(0x7f8aa3))
+
+	set(RoleSoilHole, faint)
+	set(RoleFence, subtle)
+	set(RoleFencePost, accent)
+	set(RoleLabel, label)
+
+	return t
+}
+
 // Themes is every theme by name, for the --theme flag.
-var Themes = []*Theme{&Quiet, &Full}
+var Themes = []*Theme{&Quiet, &QuietLight, &Full}
 
 // ThemeNamed returns the theme with this name, or nil.
 func ThemeNamed(name string) *Theme {
