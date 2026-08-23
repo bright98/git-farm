@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="600" viewBox="0 0 720 600" role="img" aria-label="git-farm drawn as a farm: 42 files in 10 directories, 4 commits">
+<title>git-farm drawn as a farm: 42 files in 10 directories, 4 commits</title>
+<style>
+.label{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"DejaVu Sans Mono",monospace}
+.walk{animation:walk 14s ease-in-out infinite alternate}
+@keyframes walk{from{transform:translateX(0)}to{transform:translateX(132px)}}
+.step-a{animation:step-a .7s steps(1,end) infinite}
+.step-b{animation:step-b .7s steps(1,end) infinite}
+@keyframes step-a{0%{fill-opacity:1}50%{fill-opacity:0}}
+@keyframes step-b{0%{fill-opacity:0}50%{fill-opacity:1}}
+@media(prefers-reduced-motion:reduce){.walk,.step-a,.step-b{animation:none}.step-b{fill-opacity:0}}
+</style>
+<g shape-rendering="crispEdges">
+<path fill="#3f8b52" d="M84 126h6v6h-6zM168 126h6v6h-6zM504 126h6v6h-6zM546 126h6v6h-6zM630 126h6v6h-6zM78 132h18v6h-18zM162 132h18v6h-18zM498 132h18v6h-18zM540 132h18v6h-18zM624 132h18v6h-18zM72 138h30v6h-30zM156 138h30v6h-30zM492 138h30v6h-30zM534 138h30v6h-30zM618 138h30v6h-30zM78 144h18v6h-18zM162 144h18v6h-18zM498 144h18v6h-18zM540 144h18v6h-18zM624 144h18v6h-18zM84 150h6v12h-6zM168 150h6v12h-6zM504 150h6v12h-6zM546 150h6v12h-6zM630 150h6v12h-6zM126 168h6v6h-6zM168 168h6v6h-6zM546 168h6v6h-6zM588 168h6v6h-6zM120 174h18v6h-18zM162 174h18v6h-18zM540 174h18v6h-18zM582 174h18v6h-18zM114 180h30v6h-30zM156 180h30v6h-30zM534 180h30v6h-30zM576 180h30v6h-30zM120 186h18v6h-18zM162 186h18v6h-18zM540 186h18v6h-18zM582 186h18v6h-18zM42 192h6v6h-6zM126 192h6v12h-6zM168 192h6v12h-6zM546 192h6v12h-6zM588 192h6v12h-6zM36 198h18v6h-18zM30 204h30v12h-30zM126 210h6v6h-6zM168 210h6v6h-6zM588 210h6v6h-6zM36 216h18v6h-18zM120 216h18v6h-18zM162 216h18v6h-18zM582 216h18v6h-18zM42 222h6v12h-6zM114 222h30v6h-30zM156 222h30v6h-30zM576 222h30v6h-30zM120 228h18v6h-18zM162 228h18v6h-18zM582 228h18v6h-18zM36 234h6v6h-6zM48 234h6v6h-6zM126 234h6v12h-6zM168 234h6v12h-6zM588 234h6v12h-6zM42 240h6v6h-6zM42 252h6v6h-6zM126 252h6v6h-6zM168 252h6v6h-6zM36 258h18v6h-18zM120 258h18v6h-18zM162 258h18v6h-18zM30 264h30v6h-30zM114 264h30v6h-30zM156 264h30v6h-30zM36 270h18v6h-18zM120 270h18v6h-18zM162 270h18v6h-18zM42 276h6v12h-6zM126 276h6v12h-6zM168 276h6v12h-6zM84 294h6v6h-6zM126 294h6v6h-6zM168 294h6v6h-6zM78 300h18v6h-18zM120 300h18v6h-18zM162 300h18v6h-18zM72 306h30v6h-30zM114 306h30v6h-30zM156 306h30v6h-30zM78 312h18v6h-18zM120 312h18v6h-18zM162 312h18v6h-18zM84 318h6v12h-6zM126 318h6v12h-6zM168 318h6v12h-6zM474 318h6v6h-6zM468 324h18v6h-18zM462 330h30v6h-30zM468 336h18v6h-18zM474 342h6v12h-6zM474 360h6v6h-6zM468 366h18v6h-18zM462 372h30v6h-30zM468 378h18v6h-18zM474 384h6v12h-6zM84 408h6v6h-6zM78 414h18v6h-18zM72 420h30v12h-30zM42 426h6v6h-6zM168 426h6v6h-6zM36 432h18v6h-18zM78 432h18v6h-18zM162 432h18v6h-18zM30 438h30v6h-30zM84 438h6v12h-6zM156 438h30v6h-30zM36 444h18v6h-18zM162 444h18v6h-18zM42 450h6v12h-6zM78 450h6v6h-6zM90 450h6v6h-6zM168 450h6v12h-6zM84 456h6v6h-6zM648 486h6v6h-6zM642 492h18v6h-18zM636 498h30v6h-30zM642 504h18v6h-18zM648 510h6v12h-6z"/>
+<path fill="#9a7318" d="M618 318h6v6h-6zM630 318h6v6h-6zM642 318h6v6h-6zM624 324h18v6h-18zM618 330h30v6h-30zM624 336h18v6h-18zM624 342h6v6h-6zM636 342h6v6h-6zM618 348h6v6h-6zM642 348h6v6h-6zM114 426h6v6h-6zM126 426h6v6h-6zM138 426h6v6h-6zM120 432h18v6h-18zM114 438h30v6h-30zM120 444h18v6h-18zM120 450h6v6h-6zM132 450h6v6h-6zM114 456h6v6h-6zM138 456h6v6h-6z"/>
+<path fill="#b4bcb7" d="M342 156h18v6h-18zM384 156h18v6h-18zM342 198h18v6h-18zM258 240h18v6h-18zM342 240h18v6h-18zM384 240h18v6h-18zM258 348h18v6h-18zM342 348h18v6h-18zM384 390h18v6h-18zM258 504h18v6h-18zM384 504h18v6h-18zM510 516h18v6h-18zM300 546h18v6h-18z"/>
+<path fill="#d9a520" d="M636 6h6v6h-6zM630 18h18v6h-18zM618 24h12v6h-12zM648 24h12v6h-12zM618 30h6v6h-6zM654 30h6v6h-6zM612 36h6v18h-6zM660 36h6v18h-6zM600 42h6v6h-6zM672 42h6v6h-6zM618 54h6v6h-6zM654 54h6v6h-6zM618 60h12v6h-12zM648 60h12v6h-12zM630 66h18v6h-18zM636 78h6v6h-6z"/>
+</g>
+<g fill="none" stroke-linecap="butt">
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M18 96H30M72 96H228M18 96V372M228 96V372M18 372H228"/>
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M18 396H30M210 396H228M18 396V414M228 396V414M18 576H36M210 576H228M18 558V576M228 558V576"/>
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M240 96H252M450 96H468M240 96V114M468 96V114M240 264H258M450 264H468M240 246V264M468 246V264"/>
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M480 96H492M588 96H702M480 96V264M702 96V264M480 264H702"/>
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M240 288H252M420 288H438M240 288V306M438 288V306M240 420H258M420 420H438M240 402V420M438 402V420"/>
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M240 444H252M420 444H438M240 444V462M438 444V462M240 576H258M420 576H438M240 558V576M438 558V576"/>
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M450 288H462M570 288H594M450 288V432M594 288V432M450 432H594"/>
+<path class="fence broken" stroke="#9aa29e" stroke-width="2" d="M606 288H618M684 288H702M606 288V432M702 288V432M606 432H702"/>
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M450 456H462M552 456H570M450 456V474M570 456V474M450 576H468M552 576H570M450 558V576M570 558V576"/>
+<path class="fence broken" stroke="#9aa29e" stroke-width="2" d="M582 456H594M642 456H702M582 456V576M702 456V576M582 576H702"/>
+</g>
+<g class="label" fill="#6b736f" font-size="10">
+<text x="36" y="99">farm/</text>
+<text x="36" y="399">./</text>
+<text x="258" y="99">git-farm-demo/farm/</text>
+<text x="498" y="99">internal/repo/</text>
+<text x="258" y="291">git-farm-demo/</text>
+<text x="258" y="447">git-farm-demo/cmd/</text>
+<text x="468" y="291">internal/gitlog/</text>
+<text x="624" y="291">git-farm/</text>
+<text x="468" y="459">web/</text>
+<text x="600" y="459">cache/</text>
+</g>
+<g class="walk">
+<g class="step-a">
+<g shape-rendering="crispEdges">
+<path fill="#3a3f3c" d="M48 516h18v12h-18zM36 534h6v6h-6zM72 534h6v6h-6z"/>
+<path fill="#7a52c9" d="M48 498h18v6h-18zM42 504h30v6h-30zM36 510h42v6h-42zM42 528h30v18h-30z"/>
+<path fill="#9aa29e" d="M48 546h6v18h-6zM60 546h6v18h-6z"/>
+</g>
+</g>
+<g class="step-b" fill-opacity="0">
+<g shape-rendering="crispEdges">
+<path fill="#3a3f3c" d="M48 516h18v12h-18zM36 534h6v6h-6zM72 534h6v6h-6z"/>
+<path fill="#7a52c9" d="M48 498h18v6h-18zM42 504h30v6h-30zM36 510h42v6h-42zM42 528h30v18h-30z"/>
+<path fill="#9aa29e" d="M48 546h12v6h-12zM42 552h6v12h-6zM60 552h6v6h-6zM66 558h6v6h-6z"/>
+</g>
+</g>
+</g>
+</svg>

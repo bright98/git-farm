@@ -91,6 +91,24 @@ const (
 	maxFields = 10
 )
 
+// MinField is the smallest field this theme can draw anything in: room for the
+// edge, for a tall plant's extra height, and for one row of plants of the size
+// this theme grows.
+//
+// It is a question for the theme rather than a constant because the themes do
+// not grow the same plants. A file's plants are half again as tall as the quiet
+// terminal's, so a field the terminal plants a row in can come out of the SVG
+// holding nothing — no error, no gap in the layout, just a fenced rectangle
+// with a name on it and bare soil inside, in a repository that has files there.
+func (t *Theme) MinField() (w, h int) {
+	head := t.Sprites.Tall.H() - t.Sprites.Plant.H()
+	h = 4 + head + t.StepY
+	if h < minFieldH {
+		h = minFieldH
+	}
+	return minFieldW, h
+}
+
 // Layout decides where the sky ends and where the fields go.
 //
 // It is computed once, from the state at HEAD, and never per frame.
@@ -120,11 +138,12 @@ func Layout(w, h int) (skyH int, area Rect) {
 // MaxFields is how many fields an area of this size can hold at a readable
 // size. It is what decides how many directories get their own field and how
 // many are gathered into other/.
-func MaxFields(area Rect) int {
-	if area.W < minFieldW || area.H < minFieldH {
+func MaxFields(area Rect, t *Theme) int {
+	minW, minH := t.MinField()
+	if area.W < minW || area.H < minH {
 		return 1
 	}
-	n := area.Area() / (minFieldW * minFieldH)
+	n := area.Area() / (minW * minH)
 	if n > maxFields {
 		n = maxFields
 	}
@@ -140,7 +159,7 @@ func MaxFields(area Rect) int {
 // treemap comes back with a field too small to draw, one more directory is
 // gathered into other/ and the whole thing is laid out again. Fewer and bigger,
 // until everything that is left is legible — and nothing silently missing.
-func (s *Scene) Fit(area Rect) {
+func (s *Scene) Fit(area Rect, t *Theme) {
 	if s.all == nil {
 		s.all = s.Fields
 	}
@@ -152,10 +171,10 @@ func (s *Scene) Fit(area Rect) {
 		farmer = s.all[s.Farmer].Name
 	}
 
-	for keep := MaxFields(area); keep >= 1; keep-- {
+	for keep := MaxFields(area, t); keep >= 1; keep-- {
 		s.Fields = gather(s.all, keep)
 		s.Farmer = fieldNamed(s.Fields, farmer)
-		if s.Place(area) || keep == 1 {
+		if s.Place(area, t) || keep == 1 {
 			return
 		}
 	}
@@ -186,18 +205,19 @@ func fieldNamed(fields []Field, name string) int {
 // Nothing is removed from the scene, because placing has to be repeatable: the
 // caller answers a false by gathering more directories into other/ and asking
 // again, and a mutated field list would give a different farm the second time.
-func (s *Scene) Place(area Rect) bool {
+func (s *Scene) Place(area Rect, t *Theme) bool {
 	weights := make([]float64, len(s.Fields))
 	for i, f := range s.Fields {
 		weights[i] = f.Weight
 	}
 
 	tiles := Squarify(area, weights)
+	minW, minH := t.MinField()
 
 	fits := true
 	for i := range s.Fields {
 		r := Inset(tiles[i])
-		if r.W < minFieldW || r.H < minFieldH {
+		if r.W < minW || r.H < minH {
 			s.Fields[i].rect = Rect{}
 			fits = false
 			continue
@@ -233,7 +253,7 @@ func (s *Scene) Draw(c *Canvas, o Options) {
 	rng := rand.New(rand.NewSource(7)) // a fixed seed: the sky is the same every frame
 
 	skyH, area := Layout(c.W, c.H)
-	s.Fit(area)
+	s.Fit(area, t)
 
 	if t.Sky {
 		drawSky(c, t, skyH, o.Night, rng)
@@ -334,12 +354,18 @@ func (s *Scene) drawFarmer(c *Canvas, t *Theme, o Options) {
 // draw a farmer half again as tall as the one the quiet terminal draws, so a
 // field that holds a farmer on screen can fail to hold one in the file.
 func farmerFor(t *Theme, r Rect) (stand, walk Sprite, reserve int) {
+	// The soil the farmer is not standing on still has to grow a row, or the
+	// field is a person alone in a rectangle in a directory that has files in
+	// it. That is the same sum the planting does, asked before the fact.
+	_, minH := t.MinField()
+
 	for _, f := range [...]Farmer{
 		{Stand: t.Sprites.Farmer, Walk: t.Sprites.FarmerWalk},
 		{Stand: quietSprites.Farmer, Walk: quietSprites.FarmerWalk},
 	} {
-		if r.W >= f.Stand.W()+8 && r.H >= f.Stand.H()+minFieldH {
-			return f.Stand, f.Walk, f.Stand.H() + 1
+		reserve := f.Stand.H() + 1
+		if r.W >= f.Stand.W()+8 && r.H-reserve >= minH {
+			return f.Stand, f.Walk, reserve
 		}
 	}
 	return Sprite{}, Sprite{}, 0

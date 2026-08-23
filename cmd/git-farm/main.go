@@ -440,8 +440,16 @@ flags:
 // The size does not come from the window. Nobody is looking at a terminal when
 // this runs — it runs on a CI machine with no terminal at all — so the picture
 // gets a fixed shape unless one is asked for.
+//
+// It is taller than a terminal of the same width, because a file grows bigger
+// plants: seven pixels between rows against the quiet theme's five, and a
+// farmer half again as tall. At a terminal's 120x36 the fields come out too
+// short for the crop standing in them, and the layout does the honest thing
+// with a field it cannot plant — it draws fewer and bigger ones. bubbletea
+// loses half its directories that way. Fifty rows gives the file's plants the
+// room the terminal's have.
 func writeSVG(r *repo.Repo, path string, d drawing) error {
-	cols, rows := 120, 36
+	cols, rows := 120, 50
 	if d.width > 0 {
 		cols = d.width
 	}

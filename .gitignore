@@ -1,4 +1,8 @@
 /git-farm
 /dist/
 *.svg
+# except the farm this repository draws of itself, which the README points at
+# and GitHub therefore has to be able to fetch.
+!/.github/farm.svg
+!/.github/farm-dark.svg
 *.gif

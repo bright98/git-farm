@@ -2,6 +2,14 @@
 
 A repository drawn as a pixel farm, in the terminal and in your README.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/farm-dark.svg">
+  <img alt="git-farm's own repository drawn as a farm: fields for its directories, fenced where tests were found" src=".github/farm.svg">
+</picture>
+
+*This repository, drawn by itself. The small figure is whoever committed last,
+standing in the directory they committed to, and they walk.*
+
 ```
 git farm
 ```
@@ -168,10 +176,14 @@ in the gap the fence leaves for them, and they stay sharp at any size. The
 wooden fence of the `full` theme is not replaced — that one is pixel art, and it
 stays in the pixels.
 
-**Fuller plants.** The terminal's sprites are four pixels tall because they sit
-on top of a live session and must not cover it. A file has nothing behind it, so
-it gets a leafier set — which obeys the same tested rules about silhouette and
-ink density, with more room to obey them in.
+**Fuller plants, and a taller canvas to hold them.** The terminal's sprites are
+four pixels tall because they sit on top of a live session and must not cover
+it. A file has nothing behind it, so it gets a leafier set — which obeys the
+same tested rules about silhouette and ink density, with more room to obey them
+in. Which is also why the file is 120×50 where a terminal is 120×36: bigger
+plants need taller fields, and a field too short to plant is one the layout
+gathers away, so a file at a terminal's shape quietly draws half the
+directories.
 
 **Two files, because a file cannot ask.** `--theme both` writes `farm.svg` and
 `farm-dark.svg` with palettes tuned for a white and a dark page; neither paints
@@ -279,7 +291,7 @@ test log. It caught three of them while this was being written — a field
 silently dropped from the treemap, a farmer standing on top of the plants, and a
 sun with one ray outside the sky.
 
-Three more came from running it over repositories nobody wrote it against, which
+Four more came from running it over repositories nobody wrote it against, which
 is the only way to find them. Every one was silent: a picture came out, and it
 was wrong.
 
@@ -296,6 +308,12 @@ was wrong.
 - **`--out` wrote the dark palette by default**, because the quiet theme is
   built for a dark terminal — so a plain `git farm --out farm.svg` gave a light
   README pale green on white.
+- **Fields came out empty.** The smallest field worth drawing was one number for
+  every theme, measured against the quiet terminal's four-pixel plants. A file
+  grows plants half again as tall, so a directory with six files in it was drawn
+  as a fenced rectangle with a name on it and bare soil inside. The minimum is
+  now the theme's own arithmetic, and the file is given a canvas with room for
+  what it grows.
 
 What is not tested here is the last step of all: whether the animation runs
 inside a GitHub README. It runs when the file is opened in a browser, and the

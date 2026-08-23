@@ -99,7 +99,7 @@ func TestFitGathersRatherThanDropping(t *testing.T) {
 	}
 
 	s := &Scene{Fields: fields, all: fields, Farmer: -1}
-	s.Fit(Rect{2, 14, 90, 40})
+	s.Fit(Rect{2, 14, 90, 40}, &Quiet)
 
 	if s.Drawn() == 0 {
 		t.Fatal("nothing was placed at all")
@@ -136,11 +136,11 @@ func TestFitIsRepeatable(t *testing.T) {
 	area := Rect{2, 14, 90, 44}
 
 	once := build()
-	once.Fit(area)
+	once.Fit(area, &Quiet)
 
 	twice := build()
-	twice.Fit(area)
-	twice.Fit(area) // and again, on a scene that has already been fitted
+	twice.Fit(area, &Quiet)
+	twice.Fit(area, &Quiet) // and again, on a scene that has already been fitted
 
 	if len(once.Fields) != len(twice.Fields) {
 		t.Fatalf("laying out twice gave %d fields, once gave %d", len(twice.Fields), len(once.Fields))
@@ -328,8 +328,8 @@ func TestWeighIsMonotonic(t *testing.T) {
 }
 
 func TestMaxFieldsGrowsWithTheWindow(t *testing.T) {
-	small := MaxFields(Rect{0, 0, 40, 20})
-	big := MaxFields(Rect{0, 0, 200, 100})
+	small := MaxFields(Rect{0, 0, 40, 20}, &Quiet)
+	big := MaxFields(Rect{0, 0, 200, 100}, &Quiet)
 
 	if small < 1 {
 		t.Error("even the smallest window must allow one field")
@@ -339,5 +339,42 @@ func TestMaxFieldsGrowsWithTheWindow(t *testing.T) {
 	}
 	if big > 10 {
 		t.Errorf("%d fields is a mosaic, not a farm", big)
+	}
+}
+
+// A field that is drawn at all has to be plantable by the theme drawing it.
+// The failure this guards is silent: the layout is calibrated for the quiet
+// terminal's four-pixel plants, and the themes that write a file grow plants
+// half again as tall — so a directory with files in it came out of the SVG as
+// a fenced rectangle with a name on it and nothing inside, while the terminal
+// drew the same directory with a row of plants in it.
+func TestEveryDrawnFieldCanBePlanted(t *testing.T) {
+	for _, theme := range []*Theme{&Quiet, &QuietLight, &Full, forFile(&Quiet)} {
+		_, minH := theme.MinField()
+		head := theme.Sprites.Tall.H() - theme.Sprites.Plant.H()
+
+		for _, size := range [][2]int{{MinCols, MinRows}, {80, 24}, {120, 36}, {200, 50}} {
+			_, area := Layout(size[0], size[1]*2)
+			s := sample()
+			s.Fit(area, theme)
+
+			for i, f := range s.Fields {
+				r := f.Bounds()
+				if r.W == 0 {
+					continue // not drawn at all, which is the honest answer
+				}
+
+				reserve := 0
+				if i == s.Farmer {
+					_, _, reserve = farmerFor(theme, r)
+				}
+				// The sum plantField does: the soil left over, less the room a
+				// tall plant needs above the row, over the row spacing.
+				if rows := (r.H - 4 - reserve - head) / theme.StepY; rows < 1 {
+					t.Errorf("%s %dx%d: %s is %dx%d and holds no plants (minimum height %d, farmer takes %d)",
+						theme.Name, size[0], size[1], f.Name, r.W, r.H, minH, reserve)
+				}
+			}
+		}
 	}
 }
