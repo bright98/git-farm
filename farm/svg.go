@@ -395,27 +395,27 @@ func moveV(d *strings.Builder, x, y, to int) {
 // ---- the farmer -------------------------------------------------------
 
 func (s *Scene) farmerSpan(t *Theme) int {
-	_, _, span, ok := s.FarmerSpot(t)
+	f, ok := s.FarmerSpot(t)
 	if !ok {
 		return 0
 	}
-	return span
+	return f.Span
 }
 
 // writeFarmer draws the two frames of the farmer as two groups. With animation
 // on, one is shown at a time and the pair walks; with it off, only the standing
 // frame is written and the file has no moving parts at all.
 func (s *Scene) writeFarmer(b *strings.Builder, t *Theme, o SVGOptions) {
-	x, y, span, ok := s.FarmerSpot(t)
+	f, ok := s.FarmerSpot(t)
 	if !ok {
 		return
 	}
 
 	frame := func(sprite Sprite, class, attrs string) {
 		c := NewCanvas(o.Cols, o.Rows*2)
-		c.Blit(sprite, x, y, t)
+		c.Blit(sprite, f.X, f.Y, t)
 		if o.Night {
-			c.Disc(x+sprite.W()+1, y+sprite.H()-2, 1, t.Colour(RoleLamp))
+			c.Disc(f.X+sprite.W()+1, f.Y+sprite.H()-2, 1, t.Colour(RoleLamp))
 		}
 
 		b.WriteString(`<g class="`)
@@ -427,18 +427,18 @@ func (s *Scene) writeFarmer(b *strings.Builder, t *Theme, o SVGOptions) {
 		b.WriteString("</g>\n")
 	}
 
-	if !o.Animate || span <= 0 {
-		frame(t.Sprites.Farmer, "farmer", "")
+	if !o.Animate || f.Span <= 0 {
+		frame(f.Stand, "farmer", "")
 		return
 	}
 
 	b.WriteString("<g class=\"walk\">\n")
-	frame(t.Sprites.Farmer, "step-a", "")
+	frame(f.Stand, "step-a", "")
 	// The second frame is hidden by a presentation attribute, which anything
 	// that runs the keyframes will override. A renderer that ignores CSS —
 	// a thumbnailer, an image library — then shows one farmer standing still
 	// rather than two of them on top of each other.
-	frame(t.Sprites.FarmerWalk, "step-b", ` fill-opacity="0"`)
+	frame(f.Walk, "step-b", ` fill-opacity="0"`)
 	b.WriteString("</g>\n")
 }
 

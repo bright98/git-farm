@@ -425,3 +425,57 @@ func keys[V any](m map[string]V) []string {
 	}
 	return out
 }
+
+// emptyCommit is a commit that changes no file: a release, or a merge that
+// resolved to nothing.
+func (r *testRepo) emptyCommit(author, email string, ago time.Duration, message string) {
+	r.t.Helper()
+	when := r.base.Add(-ago).Format(time.RFC3339)
+
+	cmd := exec.Command("git", "commit", "-q", "--allow-empty", "-m", message,
+		"--author", author+" <"+email+">")
+	cmd.Dir = r.dir
+	cmd.Env = append(os.Environ(),
+		"GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null",
+		"GIT_AUTHOR_DATE="+when, "GIT_COMMITTER_DATE="+when,
+	)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		r.t.Fatalf("git commit --allow-empty: %v\n%s", err, out)
+	}
+}
+
+// A tagged release is very often an empty commit, and very often what HEAD
+// points at. The farmer belongs to the newest commit that touched a file, not
+// to the newest commit: bubbletea's head is `v2.0.9`, which changes nothing, and
+// reading it literally leaves the farm with nobody in it — and the SVG, whose
+// only moving part is the farmer, comes out still.
+func TestFarmerSkipsACommitThatChangedNothing(t *testing.T) {
+	r := newTestRepo(t)
+
+	r.write("internal/ui/view.go", "package ui\n")
+	r.add(".")
+	r.commit("Ada", "ada@example.com", 2*year, "add the ui")
+
+	r.write("cmd/tool/main.go", "package main\n")
+	r.add(".")
+	r.commit("Bo", "bo@example.com", 24*time.Hour, "add the command")
+
+	r.emptyCommit("Cy", "cy@example.com", 0, "v1.0.0")
+
+	got, err := Build(r.dir, Defaults(), Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if got.LastAuthor != "Bo" {
+		t.Errorf("the farmer is %q, want Bo: the release commit changed nothing", got.LastAuthor)
+	}
+	if got.LastDir != "cmd/tool/" {
+		t.Errorf("the farmer stands in %q, want cmd/tool/", got.LastDir)
+	}
+	// The clock still comes from the newest commit, release or not, because
+	// that is what "a year before HEAD" is measured back from.
+	if want := r.base; !got.Last.Equal(want) {
+		t.Errorf("the newest commit is %v, want %v", got.Last, want)
+	}
+}

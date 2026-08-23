@@ -43,7 +43,7 @@ func main() {
 
 func run() error {
 	var (
-		themeName  = flag.String("theme", "quiet", "quiet, full, or both (an SVG in light and dark)")
+		themeName  = flag.String("theme", "quiet", "quiet, quiet-light, full, or both; --out defaults to quiet-light")
 		out        = flag.String("out", "", "write an SVG here instead of drawing in the terminal")
 		scale      = flag.Int("scale", 6, "SVG units per pixel of the farm")
 		colorName  = flag.String("color", "auto", "auto, full, 256, 16 or none")
@@ -81,7 +81,16 @@ func run() error {
 		theme = &farm.QuietLight
 	}
 	if theme == nil {
-		return fmt.Errorf("unknown theme %q: try quiet, full, or both", *themeName)
+		return fmt.Errorf("unknown theme %q: try quiet, quiet-light, full, or both", *themeName)
+	}
+
+	// The quiet theme is built to sit on a dark terminal, and defaulting to it
+	// is right for a session; a file has no session behind it, and a README
+	// page is light until its reader says otherwise. So a file nobody named a
+	// theme for gets the light one. --theme quiet still writes the dark
+	// palette, for a page that wants it.
+	if *out != "" && !flagSet("theme") {
+		theme = &farm.QuietLight
 	}
 	profile, ok := farm.ParseProfile(*colorName)
 	if !ok {
@@ -337,7 +346,7 @@ func summary(r *repo.Repo) string {
 		comma(r.Commits), plural(r.Authors, "author"), plural(len(r.Files), "file"),
 		span(r.First, r.Last))
 	if r.LastAuthor != "" {
-		fmt.Fprintf(&b, "newest commit by %s in %s\n", r.LastAuthor, or(r.LastDir, "./"))
+		fmt.Fprintf(&b, "newest change by %s in %s\n", r.LastAuthor, r.LastDir)
 	}
 	b.WriteByte('\n')
 
@@ -392,19 +401,25 @@ func span(first, last time.Time) string {
 	}
 }
 
-func or(s, alt string) string {
-	if s == "" {
-		return alt
-	}
-	return s
-}
-
 func comma(n int) string {
 	s := strconv.Itoa(n)
 	for i := len(s) - 3; i > 0; i -= 3 {
 		s = s[:i] + "," + s[i:]
 	}
 	return s
+}
+
+// flagSet reports whether the flag was given on the command line, as opposed to
+// left at its default. A default means "you decide", and writing a file and
+// drawing in a terminal decide differently.
+func flagSet(name string) bool {
+	found := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			found = true
+		}
+	})
+	return found
 }
 
 func usage() {

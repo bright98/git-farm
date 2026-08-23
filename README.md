@@ -178,6 +178,12 @@ ink density, with more room to obey them in.
 a background, so the README shows through. `--theme full` paints its own little
 world and needs only one file.
 
+The quiet theme is built to sit on a dark terminal, which is the right default
+for a session and the wrong one for a file: a file has no session behind it, and
+a README page is light until its reader says otherwise. So `--out` with no
+`--theme` writes the light palette, and `--theme quiet` still writes the dark one
+for a page that wants it.
+
 **The farmer walks, and nothing else moves.** CSS keyframes over a static
 background — never `<script>`, which GitHub strips. The two frames are swapped
 with `fill-opacity` rather than `opacity`: a README embeds the file with `<img>`,
@@ -266,13 +272,30 @@ The picture shows directory paths, and the name of whoever committed last.
 | `internal/repo/` | files rolled into directories, and the four kinds decided |
 | `internal/cache/` | the parsed repo, keyed on HEAD |
 | `farm/` | the canvas, the themes, the treemap, the drawing and the SVG |
-| `git-farm-demo/` | where the drawing layer was worked out — a separate module |
 
 The picture is tested as letters, not as colours: `farm/dump_test.go` prints the
 canvas one character per role, which is what makes a layout bug visible in a
 test log. It caught three of them while this was being written — a field
 silently dropped from the treemap, a farmer standing on top of the plants, and a
 sun with one ray outside the sky.
+
+Three more came from running it over repositories nobody wrote it against, which
+is the only way to find them. Every one was silent: a picture came out, and it
+was wrong.
+
+- **The farmer went missing from the file.** The file themes draw a farmer half
+  again as tall as the terminal's, so a field with room for a person on screen
+  could have none in the SVG — and the farmer is the only thing in the file that
+  moves, so the animation vanished with them. A short field now takes the small
+  farmer rather than none.
+- **A release commit is an empty commit.** bubbletea's HEAD is `v2.0.9`, which
+  changes no file. Read literally it left the farm with nobody in it, while
+  `--list` claimed the newest commit was in `./`. The farmer now belongs to the
+  newest commit that *touched* something; the clock still comes from the newest
+  commit.
+- **`--out` wrote the dark palette by default**, because the quiet theme is
+  built for a dark terminal — so a plain `git farm --out farm.svg` gave a light
+  README pale green on white.
 
 What is not tested here is the last step of all: whether the animation runs
 inside a GitHub README. It runs when the file is opened in a browser, and the

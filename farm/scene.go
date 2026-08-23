@@ -254,7 +254,7 @@ func (s *Scene) Draw(c *Canvas, o Options) {
 		// plant growing through their head.
 		reserve := 0
 		if i == s.Farmer {
-			reserve = farmerRoom(t, f.rect)
+			_, _, reserve = farmerFor(t, f.rect)
 		}
 		drawField(c, t, f, o, reserve)
 	}
@@ -268,56 +268,81 @@ func (s *Scene) Draw(c *Canvas, o Options) {
 	}
 }
 
-// FarmerSpot is where the farmer stands: the top-left corner of the sprite, and
-// how far along the field they can walk from there. It reports false when no
-// field is big enough to hold one.
+// Farmer is where the farmer stands, how far they can walk from there, and the
+// two sprites they are drawn with — which are not always the theme's own, since
+// a short field takes the smaller farmer rather than none.
+type Farmer struct {
+	Stand, Walk Sprite
+	X, Y        int
+	Span        int
+}
+
+// FarmerSpot is where the farmer stands. It reports false when the field they
+// belong in is too small to hold any of them.
 //
 // The SVG writer asks for this too, so that the farmer can be animated over a
 // background that never changes.
-func (s *Scene) FarmerSpot(t *Theme) (x, y, span int, ok bool) {
+func (s *Scene) FarmerSpot(t *Theme) (Farmer, bool) {
 	if s.Farmer < 0 || s.Farmer >= len(s.Fields) {
-		return 0, 0, 0, false
+		return Farmer{}, false
 	}
 	r := s.Fields[s.Farmer].rect
-	if farmerRoom(t, r) == 0 {
-		return 0, 0, 0, false // too small to stand in without trampling it
+	stand, walk, room := farmerFor(t, r)
+	if room == 0 {
+		return Farmer{}, false // too small to stand in without trampling it
 	}
 
-	sprite := t.Sprites.Farmer
-	return r.X + 3, r.Y + r.H - sprite.H() - 2, maxInt(0, r.W-sprite.W()-6), true
+	return Farmer{
+		Stand: stand,
+		Walk:  walk,
+		X:     r.X + 3,
+		Y:     r.Y + r.H - stand.H() - 2,
+		Span:  maxInt(0, r.W-stand.W()-6),
+	}, true
 }
 
 // drawFarmer puts the author of the newest commit in the field that commit
 // touched. It is the one part of the picture about a person rather than a file.
 func (s *Scene) drawFarmer(c *Canvas, t *Theme, o Options) {
-	x, y, span, ok := s.FarmerSpot(t)
+	f, ok := s.FarmerSpot(t)
 	if !ok {
 		return
 	}
 
-	sprite := t.Sprites.Farmer
+	sprite := f.Stand
 	if o.Walk%2 == 1 {
-		sprite = t.Sprites.FarmerWalk
+		sprite = f.Walk
 	}
-	if span > 0 && o.Offset > 0 {
-		x += o.Offset % span
+	x := f.X
+	if f.Span > 0 && o.Offset > 0 {
+		x += o.Offset % f.Span
 	}
 
-	c.Blit(sprite, x, y, t)
+	c.Blit(sprite, x, f.Y, t)
 	if o.Night {
-		c.Disc(x+sprite.W()+1, y+sprite.H()-2, 1, t.Colour(RoleLamp))
+		c.Disc(x+sprite.W()+1, f.Y+sprite.H()-2, 1, t.Colour(RoleLamp))
 	}
 }
 
-// farmerRoom is how many pixels at the bottom of a field are kept clear for the
-// farmer to stand in, or zero if the field is too small to hold one. Both the
-// planting and the farmer ask this, so they cannot disagree.
-func farmerRoom(t *Theme, r Rect) int {
-	sprite := t.Sprites.Farmer
-	if r.W < sprite.W()+8 || r.H < sprite.H()+minFieldH {
-		return 0
+// farmerFor picks the farmer a field has room for and says how many pixels at
+// the bottom of it are kept clear for them to stand in. Both the planting and
+// the farmer ask this, so they cannot disagree.
+//
+// The theme's own farmer is tried first and the small one second. Without that
+// second try the farmer is simply absent from a short field, which costs the
+// terminal a person and costs the SVG its only moving part: the file themes
+// draw a farmer half again as tall as the one the quiet terminal draws, so a
+// field that holds a farmer on screen can fail to hold one in the file.
+func farmerFor(t *Theme, r Rect) (stand, walk Sprite, reserve int) {
+	for _, f := range [...]Farmer{
+		{Stand: t.Sprites.Farmer, Walk: t.Sprites.FarmerWalk},
+		{Stand: quietSprites.Farmer, Walk: quietSprites.FarmerWalk},
+	} {
+		if r.W >= f.Stand.W()+8 && r.H >= f.Stand.H()+minFieldH {
+			return f.Stand, f.Walk, f.Stand.H() + 1
+		}
 	}
-	return sprite.H() + 1
+	return Sprite{}, Sprite{}, 0
 }
 
 func drawSky(c *Canvas, t *Theme, skyH int, night bool, rng *rand.Rand) {

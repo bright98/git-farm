@@ -83,8 +83,9 @@ type Repo struct {
 	First   time.Time `json:"first_commit,omitzero"`
 	Last    time.Time `json:"last_commit,omitzero"`
 
-	// LastAuthor is where the farmer stands: the author of the newest commit,
-	// in the field that commit touched.
+	// LastAuthor is where the farmer stands: the author of the newest commit
+	// that changed a file, in the field that commit touched. A repo whose head
+	// is an empty release commit still has a farmer, one commit further back.
 	LastAuthor string `json:"last_author,omitempty"`
 	LastDir    string `json:"last_dir,omitempty"`
 
@@ -151,8 +152,17 @@ type accumulator struct {
 	commits int
 
 	first, last time.Time
-	lastAuthor  string
-	lastPaths   []string
+
+	// The farmer stands where the newest commit that changed a file landed,
+	// which is not always the newest commit. A release commit or a merge that
+	// touches nothing names a person but no field, and a farmer with nowhere
+	// to stand is drawn nowhere at all — so the picture would quietly lose the
+	// only thing in it that is about a person, and the SVG its only moving
+	// part. The newest commit's own time still sets the clock; only the person
+	// and the place come from the newest commit that did something.
+	touched    time.Time
+	lastAuthor string
+	lastPaths  []string
 }
 
 type stat struct {
@@ -175,7 +185,10 @@ func (a *accumulator) add(c gitlog.Commit) error {
 		a.first = c.When
 	}
 	if c.When.After(a.last) || a.last.IsZero() {
-		a.last, a.lastAuthor, a.lastPaths = c.When, c.Author, nil
+		a.last = c.When
+	}
+	if len(c.Changes) > 0 && (c.When.After(a.touched) || a.touched.IsZero()) {
+		a.touched, a.lastAuthor, a.lastPaths = c.When, c.Author, nil
 		for _, ch := range c.Changes {
 			a.lastPaths = append(a.lastPaths, ch.Path)
 		}

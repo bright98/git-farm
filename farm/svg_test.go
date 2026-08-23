@@ -215,3 +215,39 @@ func between(s, from, to string) string {
 	}
 	return rest[:j]
 }
+
+// The farmer is the only thing in the file that moves, so a farmer the file
+// leaves out is a picture with nothing animated in it at all. The file themes
+// draw a farmer half again as tall as the quiet terminal's, which is how one
+// went missing: a field with room for a farmer on screen had none in the file,
+// and the SVG came out static without saying so.
+func TestSVGKeepsTheFarmerTheTerminalDraws(t *testing.T) {
+	sizes := [][2]int{{MinCols, MinRows}, {80, 24}, {120, 36}, {200, 50}}
+
+	for _, theme := range []*Theme{&Quiet, &Full} {
+		for _, size := range sizes {
+			cols, rows := size[0], size[1]
+			for i := range sample().Fields {
+				s := sample()
+				s.Farmer = i
+				s.Draw(NewCanvas(cols, rows*2), Options{Theme: theme, Names: true})
+				if _, ok := s.FarmerSpot(theme); !ok {
+					continue // no room on screen either, so nothing is being lost
+				}
+
+				var b strings.Builder
+				f := sample()
+				f.Farmer = i
+				if err := f.WriteSVG(&b, SVGOptions{
+					Theme: theme, Cols: cols, Rows: rows, Names: true, Animate: true,
+				}); err != nil {
+					t.Fatal(err)
+				}
+				if !strings.Contains(b.String(), "@keyframes walk") {
+					t.Errorf("%s %dx%d, farmer in %s: the terminal draws a farmer and the file does not animate one",
+						theme.Name, cols, rows, sample().Fields[i].Name)
+				}
+			}
+		}
+	}
+}
