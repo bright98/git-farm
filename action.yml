@@ -1,0 +1,139 @@
+name: git-farm
+description: Draw this repository as a pixel farm and write it as an SVG.
+author: haleh
+
+branding:
+  icon: sun
+  color: green
+
+inputs:
+  out:
+    description: Where to write the SVG. With theme "both", the dark one goes beside it as <name>-dark.svg.
+    required: false
+    default: farm.svg
+  theme:
+    description: quiet, quiet-light, full, or both — both writes a light file and a dark one, and a README can then show the right one.
+    required: false
+    default: both
+  since:
+    description: Ignore history older than this, measured back from the newest commit.
+    required: false
+    default: 5y
+  depth:
+    description: How many path segments a field name keeps. Empty means the default, which is 2.
+    required: false
+    default: ""
+  names:
+    description: Write directory names on the fields and name whoever committed last. Set false to draw the farm with nobody named.
+    required: false
+    default: "true"
+  version:
+    description: The git-farm release to run. Empty means the one this action was published with, which is what you want.
+    required: false
+    default: ""
+
+outputs:
+  svg:
+    description: The file that was written.
+    value: ${{ inputs.out }}
+  dark-svg:
+    description: The dark file, when theme is both. Empty otherwise.
+    value: ${{ steps.draw.outputs.dark-svg }}
+
+runs:
+  using: composite
+  steps:
+    # Nothing here reaches the network except this step, and it reaches only
+    # GitHub's own release download host. git-farm itself makes no network
+    # calls at all: it reads git log and writes a file. That is checkable with
+    # one grep, and it is the reason this is worth running on somebody else's
+    # repository.
+    - name: install git-farm
+      id: install
+      shell: bash
+      env:
+        # Bumped by the release, so that `uses: haleh/git-farm@<sha>` runs the
+        # binary that sha was released with. A tag can be moved and a version
+        # inferred from github.action_ref cannot survive being pinned to a SHA,
+        # which is how everyone should be pinning this.
+        DEFAULT_VERSION: v0.1.0
+        INPUT_VERSION: ${{ inputs.version }}
+        REPO: haleh/git-farm
+      run: |
+        set -euo pipefail
+
+        version="${INPUT_VERSION:-$DEFAULT_VERSION}"
+
+        os=$(uname -s | tr '[:upper:]' '[:lower:]')
+        case "$os" in
+          linux|darwin) ;;
+          *) echo "::error::git-farm has no build for $os" >&2; exit 1 ;;
+        esac
+
+        case "$(uname -m)" in
+          x86_64|amd64) arch=amd64 ;;
+          aarch64|arm64) arch=arm64 ;;
+          *) echo "::error::git-farm has no build for $(uname -m)" >&2; exit 1 ;;
+        esac
+
+        archive="git-farm_${version#v}_${os}_${arch}.tar.gz"
+        base="https://github.com/${REPO}/releases/download/${version}"
+
+        dir=$(mktemp -d)
+        curl -fsSL --retry 3 --retry-delay 2 -o "$dir/$archive" "$base/$archive"
+        curl -fsSL --retry 3 --retry-delay 2 -o "$dir/checksums.txt" "$base/checksums.txt"
+
+        # The checksum is the whole reason the download is safe to run. Verify
+        # only the line for the file that was fetched, or the check passes on a
+        # list of files nobody downloaded.
+        (
+          cd "$dir"
+          grep " ${archive}\$" checksums.txt > wanted.txt
+          if command -v sha256sum > /dev/null; then
+            sha256sum -c wanted.txt
+          else
+            shasum -a 256 -c wanted.txt
+          fi
+        )
+
+        tar -xzf "$dir/$archive" -C "$dir" git-farm
+        chmod +x "$dir/git-farm"
+        echo "bin=$dir/git-farm" >> "$GITHUB_OUTPUT"
+        "$dir/git-farm" --version
+
+    - name: draw the farm
+      id: draw
+      shell: bash
+      env:
+        BIN: ${{ steps.install.outputs.bin }}
+        OUT: ${{ inputs.out }}
+        THEME: ${{ inputs.theme }}
+        SINCE: ${{ inputs.since }}
+        DEPTH: ${{ inputs.depth }}
+        NAMES: ${{ inputs.names }}
+      run: |
+        set -euo pipefail
+
+        # Every input goes through the environment rather than into the script
+        # text, so a repository that sets one to something shell-shaped gets a
+        # strange farm rather than a command run on its own runner.
+        args=(--out "$OUT" --theme "$THEME" --since "$SINCE")
+        if [ -n "$DEPTH" ]; then
+          args+=(--depth "$DEPTH")
+        fi
+        if [ "$NAMES" = "false" ]; then
+          args+=(--names=false)
+        fi
+
+        "$BIN" "${args[@]}"
+
+        # The same rule the binary uses: farm.svg -> farm-dark.svg, and a name
+        # with no extension simply gains the suffix.
+        dark=""
+        if [ "$THEME" = "both" ]; then
+          case "$(basename "$OUT")" in
+            *.*) dark="${OUT%.*}-dark.${OUT##*.}" ;;
+            *)   dark="${OUT}-dark" ;;
+          esac
+        fi
+        echo "dark-svg=$dark" >> "$GITHUB_OUTPUT"

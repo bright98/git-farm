@@ -1,0 +1,42 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write # to create the release and upload the binaries to it
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # goreleaser builds the changelog from the history
+
+      # Before anything is published, not after: the action downloads the
+      # binary named in DEFAULT_VERSION, so a tag that ships without bumping it
+      # would quietly keep running the previous release.
+      - name: check that the action points at this release
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          pinned=$(grep -E '^ +DEFAULT_VERSION:' action.yml | awk '{print $2}')
+          if [ "$pinned" != "$TAG" ]; then
+            echo "::error file=action.yml::action.yml pins $pinned, but this tag is $TAG"
+            exit 1
+          fi
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -2,6 +2,9 @@
 
 A repository drawn as a pixel farm, in the terminal and in your README.
 
+<!-- Drawn from the committed copy, so it works on a fresh clone. Once the
+     farm workflow has run once, this can point at the live branch instead:
+     https://raw.githubusercontent.com/haleh/git-farm/farm/farm.svg -->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset=".github/farm-dark.svg">
   <img alt="git-farm's own repository drawn as a farm: fields for its directories, fenced where tests were found" src=".github/farm.svg">
@@ -55,10 +58,10 @@ committed last, standing where they committed.
 
 ## Status
 
-**Phases 0 to 2 of [the plan](git-farm-plan.md) are done: it reads a repository,
-draws it in the terminal, and writes it as an SVG.** Still to come: the GitHub
-Action that keeps the picture up to date (phase 3), the TUI (phase 4) and the
-time-lapse (phase 5).
+**Phases 0 to 3 of [the plan](git-farm-plan.md) are done: it reads a repository,
+draws it in the terminal, writes it as an SVG, and keeps that SVG up to date
+from a GitHub Action.** Still to come: the TUI (phase 4) and the time-lapse
+(phase 5).
 
 ```sh
 go build ./cmd/git-farm
@@ -227,6 +230,88 @@ nothing is timestamped, and the file is not rewritten when it has not changed �
 so a re-run over an unchanged repository is genuinely a no-op, not one that only
 looks like one to git.
 
+## The Action
+
+Two files, and a repository grows its own farm.
+
+`.github/workflows/farm.yml`:
+
+```yaml
+name: farm
+
+on:
+  push:
+    branches: [main]      # never the farm branch, or it triggers itself forever
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write         # the only permission it needs
+
+jobs:
+  grow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # git-farm reads the whole history
+
+      - uses: haleh/git-farm@<commit-sha>
+        with:
+          out: farm.svg
+          theme: both     # writes farm.svg and farm-dark.svg
+          since: 5y
+
+      - name: publish
+        run: |
+          set -euo pipefail
+          git config user.name  "git-farm"
+          git config user.email "git-farm@users.noreply.github.com"
+          git checkout --orphan farm
+          git rm -rf --cached . > /dev/null
+          git add -f farm.svg farm-dark.svg
+          git commit -m "farm $(date -u +%F)"
+          git push -f origin farm
+```
+
+and in `README.md`:
+
+```markdown
+<picture>
+  <source media="(prefers-color-scheme: dark)"
+          srcset="https://raw.githubusercontent.com/USER/REPO/farm/farm-dark.svg">
+  <img alt="the farm" src="https://raw.githubusercontent.com/USER/REPO/farm/farm.svg">
+</picture>
+```
+
+| Input | Default | |
+|---|---|---|
+| `out` | `farm.svg` | where to write it; the dark file goes beside it |
+| `theme` | `both` | `quiet`, `quiet-light`, `full`, or `both` |
+| `since` | `5y` | ignore history older than this |
+| `depth` | | how many path segments a field name keeps |
+| `names` | `true` | `false` draws the farm with nobody named |
+| `version` | | the release to run; empty means the one the action ships with |
+
+**The branch is the part to get right.** Committing `farm.svg` to `main` on
+every push grows the repository forever and fills its history with "update
+farm". The `farm` branch above is an orphan, force-pushed: always exactly one
+commit holding two files, and `main` never hears about it.
+
+**Pin to a commit SHA, not a tag.** A tag can be moved and a SHA cannot, and
+this is an action that runs on your repository with `contents: write`. The
+action downloads a released binary and checks it against the release's
+`checksums.txt` before running it — a download that does not match is a failed
+job, not a farm.
+
+**It is a composite action, not a Docker one**, because a Docker action costs
+thirty seconds of startup on every run to save a two-second download.
+
+**Scheduled workflows are disabled after 60 days of no activity.** That is
+GitHub, not a bug here: a repository nobody touches stops growing its farm,
+which is arguably the honest outcome.
+
 ## Refusals
 
 Four cases produce a farm that is quietly wrong, so they produce an error
@@ -289,7 +374,11 @@ counts and inline tests. An uncommitted edit will not invalidate it;
 
 Nothing leaves the machine. git-farm makes no network calls at all — it runs
 `git log`, reads files in the checkout, and writes a picture. That is checkable
-with one grep.
+with one grep, and it is the reason it is worth running on somebody else's
+repository. The Action reaches the network exactly once, to GitHub's own release
+host, and checks what it downloaded against the release's `checksums.txt` before
+running it. Its one permission is `contents: write`, and only to push the farm
+branch.
 
 The picture shows directory paths, and the name of whoever committed last.
 `--names=false` removes both.
@@ -303,6 +392,8 @@ The picture shows directory paths, and the name of whoever committed last.
 | `internal/repo/` | files rolled into directories, and the four kinds decided |
 | `internal/cache/` | the parsed repo, keyed on HEAD |
 | `farm/` | the canvas, the themes, the treemap, the drawing and the SVG |
+| `action.yml` | the composite Action: downloads a released binary, checks it, runs it |
+| `.goreleaser.yaml` | the release build — linux and darwin, amd64 and arm64 |
 
 The picture is tested as letters, not as colours: `farm/dump_test.go` prints the
 canvas one character per role, which is what makes a layout bug visible in a

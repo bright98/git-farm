@@ -1,0 +1,65 @@
+version: 2
+
+project_name: git-farm
+
+before:
+  hooks:
+    - go mod tidy
+    # A release that draws a wrong farm is worse than no release: the picture
+    # is committed to somebody else's README and nobody looks at it twice.
+    - go test ./...
+
+builds:
+  - id: git-farm
+    main: ./cmd/git-farm
+    binary: git-farm
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    # linux for the Action, which runs on ubuntu-latest and increasingly on
+    # arm64 runners; darwin so the same binary is the one you use by hand.
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: git-farm
+    # Spelled out rather than left to the default, because action.yml builds
+    # this exact string from uname and the two must agree. The default template
+    # says Darwin and x86_64; uname says the same, but only by luck on one of
+    # them, and the luck is not worth depending on.
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats:
+      - tar.gz
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-dev"
+
+changelog:
+  use: git
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+release:
+  draft: false
+  prerelease: auto
+  footer: |
+    The Action pins a version. To use this one:
+
+        - uses: haleh/git-farm@{{ .Tag }}

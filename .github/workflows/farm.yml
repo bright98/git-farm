@@ -1,0 +1,42 @@
+name: farm
+
+on:
+  push:
+    branches: [main] # never the farm branch, or it triggers itself forever
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write # the only permission it needs, and only to push the farm branch
+
+jobs:
+  grow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # git-farm reads the whole history and refuses a shallow clone
+
+      # ./ rather than haleh/git-farm@<sha>: this repository is the one place
+      # the action should be the working copy rather than a release, so a
+      # change to it is tested by the next push instead of the next tag.
+      - uses: ./
+        with:
+          out: farm.svg
+          theme: both
+          since: 5y
+
+      # An orphan branch, force-pushed: always exactly one commit holding two
+      # files. Committing the picture to main instead would grow the repository
+      # forever and fill its history with "update farm".
+      - name: publish
+        run: |
+          set -euo pipefail
+          git config user.name  "git-farm"
+          git config user.email "git-farm@users.noreply.github.com"
+          git checkout --orphan farm
+          git rm -rf --cached . > /dev/null
+          git add -f farm.svg farm-dark.svg
+          git commit -m "farm $(date -u +%F)"
+          git push -f origin farm
