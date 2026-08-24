@@ -4,7 +4,7 @@ A repository drawn as a pixel farm, in the terminal and in your README.
 
 <!-- Drawn from the committed copy, so it works on a fresh clone. Once the
      farm workflow has run once, this can point at the live branch instead:
-     https://raw.githubusercontent.com/haleh/git-farm/farm/farm.svg -->
+     https://raw.githubusercontent.com/bright98/git-farm/farm/farm.svg -->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset=".github/farm-dark.svg">
   <img alt="git-farm's own repository drawn as a farm: fields for its directories, fenced where tests were found" src=".github/farm.svg">
@@ -74,13 +74,13 @@ committed last, standing where they committed.
 **In a terminal.**
 
 ```sh
-go install github.com/haleh/git-farm/cmd/git-farm@latest
+go install github.com/bright98/git-farm/cmd/git-farm@latest
 git farm
 ```
 
 `git farm` works with a space in it because git runs any `git-farm` on your PATH
 as a subcommand, for free. There are prebuilt binaries on the
-[releases page](https://github.com/haleh/git-farm/releases) if you would rather
+[releases page](https://github.com/bright98/git-farm/releases) if you would rather
 not build one — linux and macOS, Intel and ARM.
 
 ```sh
@@ -115,7 +115,7 @@ jobs:
         with:
           fetch-depth: 0  # git-farm reads the whole history
 
-      - uses: haleh/git-farm@<commit-sha>
+      - uses: bright98/git-farm@<commit-sha>
         with:
           out: farm.svg
           theme: both     # writes farm.svg and farm-dark.svg

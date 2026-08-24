@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/haleh/git-farm/internal/gitlog"
+	"github.com/bright98/git-farm/internal/gitlog"
 )
 
 // The tests below build real git repositories in a temp directory and run the

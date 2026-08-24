@@ -1,6 +1,6 @@
 name: git-farm
 description: Draw this repository as a pixel farm and write it as an SVG.
-author: haleh
+author: bright98
 
 branding:
   icon: sun
@@ -52,13 +52,13 @@ runs:
       id: install
       shell: bash
       env:
-        # Bumped by the release, so that `uses: haleh/git-farm@<sha>` runs the
+        # Bumped by the release, so that `uses: bright98/git-farm@<sha>` runs the
         # binary that sha was released with. A tag can be moved and a version
         # inferred from github.action_ref cannot survive being pinned to a SHA,
         # which is how everyone should be pinning this.
         DEFAULT_VERSION: v0.1.0
         INPUT_VERSION: ${{ inputs.version }}
-        REPO: haleh/git-farm
+        REPO: bright98/git-farm
       run: |
         set -euo pipefail
 

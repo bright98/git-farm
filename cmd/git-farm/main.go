@@ -24,10 +24,10 @@ import (
 
 	"golang.org/x/term"
 
-	"github.com/haleh/git-farm/farm"
-	"github.com/haleh/git-farm/internal/cache"
-	"github.com/haleh/git-farm/internal/gitlog"
-	"github.com/haleh/git-farm/internal/repo"
+	"github.com/bright98/git-farm/farm"
+	"github.com/bright98/git-farm/internal/cache"
+	"github.com/bright98/git-farm/internal/gitlog"
+	"github.com/bright98/git-farm/internal/repo"
 )
 
 // version is stamped by the release build; the default is what a `go build`

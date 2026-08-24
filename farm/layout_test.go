@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/haleh/git-farm/internal/repo"
+	"github.com/bright98/git-farm/internal/repo"
 )
 
 // Every tile has to stay inside the area and out of its neighbours. An overlap

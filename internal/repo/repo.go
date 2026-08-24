@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/haleh/git-farm/internal/gitlog"
+	"github.com/bright98/git-farm/internal/gitlog"
 )
 
 // Kind is what a directory looks like from above. A directory can be several of

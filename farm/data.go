@@ -4,7 +4,7 @@ import (
 	"math"
 	"sort"
 
-	"github.com/haleh/git-farm/internal/repo"
+	"github.com/bright98/git-farm/internal/repo"
 )
 
 // FromRepo turns a parsed repository into a scene: which directories exist,

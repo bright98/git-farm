@@ -1,4 +1,4 @@
-module github.com/haleh/git-farm
+module github.com/bright98/git-farm
 
 go 1.25.0
 

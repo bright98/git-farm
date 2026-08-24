@@ -18,7 +18,7 @@ jobs:
         with:
           fetch-depth: 0 # git-farm reads the whole history and refuses a shallow clone
 
-      # ./ rather than haleh/git-farm@<sha>: this repository is the one place
+      # ./ rather than bright98/git-farm@<sha>: this repository is the one place
       # the action should be the working copy rather than a release, so a
       # change to it is tested by the next push instead of the next tag.
       - uses: ./

@@ -65,4 +65,4 @@ release:
   footer: |
     The Action pins a version. To use this one:
 
-        - uses: haleh/git-farm@{{ .Tag }}
+        - uses: bright98/git-farm@{{ .Tag }}
