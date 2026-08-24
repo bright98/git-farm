@@ -251,7 +251,7 @@ func (s *Scene) writeFields(b *strings.Builder, t *Theme, o SVGOptions) {
 	// has its fence, in the pixels.
 	vectorFence := t.Border == BorderGlyph
 
-	var fences, labels strings.Builder
+	var fences, labels, hits strings.Builder
 
 	for _, f := range s.Fields {
 		r := f.Bounds()
@@ -261,6 +261,8 @@ func (s *Scene) writeFields(b *strings.Builder, t *Theme, o SVGOptions) {
 
 		x0, y0 := r.X*scale, r.Y*scale
 		x1, y1 := (r.X+r.W)*scale, (r.Y+r.H)*scale
+
+		writeHit(&hits, x0, y0, x1-x0, y1-y0, fieldTitle(f))
 
 		// The name sits in the top edge, and the edge breaks to let it through
 		// — the same thing the terminal does by handing those cells to text.
@@ -334,6 +336,91 @@ func (s *Scene) writeFields(b *strings.Builder, t *Theme, o SVGOptions) {
 		b.WriteString(labels.String())
 		b.WriteString("</g>\n")
 	}
+	// The hit layer goes on last, so that it is above everything it describes
+	// — and before the farmer, who is written after this and keeps their own.
+	if hits.Len() > 0 {
+		b.WriteString("<g fill=\"transparent\" pointer-events=\"all\">\n")
+		b.WriteString(hits.String())
+		b.WriteString("</g>\n")
+	}
+}
+
+// ---- what the pointer says --------------------------------------------
+//
+// A tooltip is not a second picture, it is the sentence the picture is short
+// for. It only ever appears where a real thing is: a field is a directory and
+// the farmer is a person, so both can be named. A plant cannot — a field with
+// three hundred files gets twenty squares, and the plants in it are a sample
+// that keeps the proportions rather than twenty particular files. Naming one
+// would be inventing a fact, so nothing here does.
+//
+// None of it shows on a GitHub README, which embeds the file with <img> and so
+// renders it as a picture with nothing to hover. It is for the reader who opens
+// the file itself, and for anything that puts the SVG in a page.
+
+// writeHit is one invisible rectangle over a thing worth naming. fill and
+// pointer-events both say it is there to be hovered: a transparent fill is what
+// most renderers hit-test on, and pointer-events="all" is what says so outright.
+func writeHit(b *strings.Builder, x, y, w, h int, title string) {
+	if title == "" {
+		return
+	}
+	b.WriteString(`<rect x="` + strconv.Itoa(x) + `" y="` + strconv.Itoa(y) +
+		`" width="` + strconv.Itoa(w) + `" height="` + strconv.Itoa(h) + `">`)
+	b.WriteString("<title>" + escape(title) + "</title></rect>\n")
+}
+
+// fieldTitle is a field in one line: the three claims the legend makes about
+// it, and the counts they were made from.
+func fieldTitle(f Field) string {
+	s := f.Name + " — " + kindWord(f.Kind) + ", " + fenceWord(f.Fence) + " — " +
+		count(f.Counts.Total(), "file")
+
+	for _, part := range []struct {
+		n    int
+		what string
+	}{
+		{f.Counts.Weed, "churned"},
+		{f.Counts.Tall, "big"},
+		{f.Counts.Dry, "quiet for a year"},
+		{f.Counts.Hole, "deleted"},
+	} {
+		if part.n > 0 {
+			s += ", " + strconv.Itoa(part.n) + " " + part.what
+		}
+	}
+	return s
+}
+
+func kindWord(k Kind) string {
+	switch k {
+	case Hotspot:
+		return "a hotspot"
+	case Untested:
+		return "untested"
+	case Dead:
+		return "dead"
+	default:
+		return "healthy"
+	}
+}
+
+func fenceWord(f Fence) string {
+	switch f {
+	case FenceBroken:
+		return "no test files found"
+	case FenceUnknown:
+		return "no rule here, so no claim"
+	default:
+		return "tests found"
+	}
+}
+
+func count(n int, what string) string {
+	if n == 1 {
+		return "1 " + what
+	}
+	return strconv.Itoa(n) + " " + what + "s"
 }
 
 // writeLabel puts a field's name in the hole its fence left for it. gapFrom is
@@ -429,6 +516,7 @@ func (s *Scene) writeFarmer(b *strings.Builder, t *Theme, o SVGOptions) {
 
 	if !o.Animate || f.Span <= 0 {
 		frame(f.Stand, "farmer", "")
+		s.writeFarmerHit(b, f, o)
 		return
 	}
 
@@ -439,6 +527,23 @@ func (s *Scene) writeFarmer(b *strings.Builder, t *Theme, o SVGOptions) {
 	// a thumbnailer, an image library — then shows one farmer standing still
 	// rather than two of them on top of each other.
 	frame(f.Walk, "step-b", ` fill-opacity="0"`)
+	s.writeFarmerHit(b, f, o)
+	b.WriteString("</g>\n")
+}
+
+// writeFarmerHit names the person in the picture. It goes inside the walking
+// group, so the patch of ground it covers walks with them rather than sitting
+// where they set off from.
+func (s *Scene) writeFarmerHit(b *strings.Builder, f Farmer, o SVGOptions) {
+	if s.Author == "" || s.Farmer < 0 || s.Farmer >= len(s.Fields) {
+		return
+	}
+
+	b.WriteString("<g fill=\"transparent\" pointer-events=\"all\">\n")
+	writeHit(b,
+		f.X*o.Scale, f.Y*o.Scale,
+		f.Stand.W()*o.Scale, f.Stand.H()*o.Scale,
+		s.Author+" committed last, in "+s.Fields[s.Farmer].Name)
 	b.WriteString("</g>\n")
 }
 

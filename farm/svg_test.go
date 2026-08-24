@@ -70,8 +70,12 @@ func TestSVGIsMergedIntoPaths(t *testing.T) {
 	if paths := strings.Count(quiet, "<path"); paths > 20 {
 		t.Errorf("%d paths for a seven-colour palette", paths)
 	}
-	if strings.Contains(out, "<rect") {
-		t.Error("a rect got in: the pixels should be merged into paths")
+	// A rect is allowed only as an invisible patch carrying a tooltip. A rect
+	// with pixels in it is a merge that did not happen.
+	for _, after := range strings.Split(out, "<rect")[1:] {
+		if !strings.HasPrefix(after[strings.Index(after, ">"):], "><title>") {
+			t.Error("a rect got in that is not a tooltip: the pixels should be merged into paths")
+		}
 	}
 
 	// And the merging has to actually merge: a farm this size cannot be drawn
@@ -249,5 +253,52 @@ func TestSVGKeepsTheFarmerTheTerminalDraws(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+// A tooltip is the sentence the picture is short for, so it may only name a
+// thing that is really there: a field is a directory and the farmer is a
+// person. A plant is a sample that keeps a field's proportions, not a
+// particular file, so nothing in here names one.
+func TestSVGNamesEveryFieldAndTheFarmer(t *testing.T) {
+	s := sample()
+	var b strings.Builder
+	if err := s.WriteSVG(&b, SVGOptions{Theme: &Quiet, Names: true, Animate: true}); err != nil {
+		t.Fatal(err)
+	}
+	out := b.String()
+
+	for _, f := range s.Fields {
+		if f.Bounds().W == 0 {
+			continue
+		}
+		if !strings.Contains(out, escape(f.Name)+" —") {
+			t.Errorf("%s is drawn but has no tooltip", f.Name)
+		}
+	}
+	if !strings.Contains(out, "Ada committed last, in internal/store/") {
+		t.Error("the farmer is not named")
+	}
+
+	// The counts in the tooltip are the field's real files, not its squares:
+	// legacy/ is 12 quiet and 5 deleted however few plants it has room for.
+	if !strings.Contains(out, "legacy/ — dead, no rule here, so no claim — 17 files, 12 quiet for a year, 5 deleted") {
+		t.Error("a field's tooltip does not report its real counts")
+	}
+}
+
+// Every tooltip has to be reachable, which means the patch that carries it is
+// above the picture it describes — and the farmer's is above the field they
+// stand in, or the field swallows the one tooltip that names a person.
+func TestSVGFarmerTooltipIsAboveTheFields(t *testing.T) {
+	out := draw(t, SVGOptions{Theme: &Quiet, Names: true, Animate: true})
+
+	field := strings.Index(out, "internal/store/ —")
+	farmer := strings.Index(out, "Ada committed last")
+	if field < 0 || farmer < 0 {
+		t.Fatal("a tooltip is missing")
+	}
+	if farmer < field {
+		t.Error("the farmer's tooltip is written before the field's, so the field covers it")
 	}
 }

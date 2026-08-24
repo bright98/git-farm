@@ -207,6 +207,21 @@ which is rendered without a compositor, and the properties normally handed to
 the compositor are the ones at risk of being dropped. `prefers-reduced-motion`
 stops it entirely.
 
+**A tooltip on every field, and on the farmer.** An invisible patch over each
+field carries a `<title>`: the directory, the three claims the legend makes
+about it, and the counts they were made from — `internal/store/ — a hotspot,
+tests found — 22 files, 14 churned, 2 big`. The farmer's walks with them and
+names the person. Nothing else is named, because nothing else is a real thing: a
+field with three hundred files gets twenty squares, and the plants in it are a
+sample that keeps the proportions rather than twenty particular files, so
+pointing at one and giving it a name would be inventing a fact.
+
+None of it shows on a GitHub README, which embeds the file with `<img>` — that
+makes it an image document, a picture with no DOM to hover. The tooltips are for
+the reader who clicks through to the file itself, and for any page that puts the
+SVG inline. Naming a plant properly is phase 4's problem, where a cursor lands
+on one.
+
 **The same bytes every time.** Colours are sorted rather than taken from a map,
 nothing is timestamped, and the file is not rewritten when it has not changed —
 so a re-run over an unchanged repository is genuinely a no-op, not one that only

@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="720" height="600" viewBox="0 0 720 600" role="img" aria-label="git-farm drawn as a farm: 44 files in 11 directories, 5 commits">
-<title>git-farm drawn as a farm: 44 files in 11 directories, 5 commits</title>
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="600" viewBox="0 0 720 600" role="img" aria-label="git-farm drawn as a farm: 46 files in 12 directories, 6 commits">
+<title>git-farm drawn as a farm: 46 files in 12 directories, 6 commits</title>
 <style>
 .label{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"DejaVu Sans Mono",monospace}
 .walk{animation:walk 14s ease-in-out infinite alternate}
-@keyframes walk{from{transform:translateX(0)}to{transform:translateX(54px)}}
+@keyframes walk{from{transform:translateX(0)}to{transform:translateX(126px)}}
 .step-a{animation:step-a .7s steps(1,end) infinite}
 .step-b{animation:step-b .7s steps(1,end) infinite}
 @keyframes step-a{0%{fill-opacity:1}50%{fill-opacity:0}}
@@ -11,49 +11,64 @@
 @media(prefers-reduced-motion:reduce){.walk,.step-a,.step-b{animation:none}.step-b{fill-opacity:0}}
 </style>
 <g shape-rendering="crispEdges">
-<path fill="#3f8b52" d="M84 126h6v6h-6zM168 126h6v6h-6zM498 126h6v6h-6zM540 126h6v6h-6zM624 126h6v6h-6zM78 132h18v6h-18zM162 132h18v6h-18zM492 132h18v6h-18zM534 132h18v6h-18zM618 132h18v6h-18zM72 138h30v6h-30zM156 138h30v6h-30zM486 138h30v6h-30zM528 138h30v6h-30zM612 138h30v6h-30zM78 144h18v6h-18zM162 144h18v6h-18zM492 144h18v6h-18zM534 144h18v6h-18zM618 144h18v6h-18zM84 150h6v12h-6zM168 150h6v12h-6zM498 150h6v12h-6zM540 150h6v12h-6zM624 150h6v12h-6zM126 168h6v6h-6zM168 168h6v6h-6zM540 168h6v6h-6zM582 168h6v6h-6zM120 174h18v6h-18zM162 174h18v6h-18zM534 174h18v6h-18zM576 174h18v6h-18zM114 180h30v6h-30zM156 180h30v6h-30zM528 180h30v6h-30zM570 180h30v6h-30zM120 186h18v6h-18zM162 186h18v6h-18zM534 186h18v6h-18zM576 186h18v6h-18zM126 192h6v12h-6zM168 192h6v12h-6zM540 192h6v12h-6zM582 192h6v12h-6zM126 210h6v6h-6zM168 210h6v6h-6zM582 210h6v6h-6zM120 216h18v6h-18zM162 216h18v6h-18zM576 216h18v6h-18zM114 222h30v6h-30zM156 222h30v6h-30zM570 222h30v6h-30zM120 228h18v6h-18zM162 228h18v6h-18zM576 228h18v6h-18zM126 234h6v12h-6zM168 234h6v12h-6zM582 234h6v12h-6zM42 252h6v6h-6zM126 252h6v6h-6zM168 252h6v6h-6zM36 258h18v6h-18zM120 258h18v6h-18zM162 258h18v6h-18zM30 264h30v6h-30zM114 264h30v6h-30zM156 264h30v6h-30zM36 270h18v6h-18zM120 270h18v6h-18zM162 270h18v6h-18zM42 276h6v12h-6zM126 276h6v12h-6zM168 276h6v12h-6zM84 294h6v6h-6zM126 294h6v6h-6zM168 294h6v6h-6zM78 300h18v6h-18zM120 300h18v6h-18zM162 300h18v6h-18zM72 306h30v6h-30zM114 306h30v6h-30zM156 306h30v6h-30zM450 306h6v6h-6zM492 306h6v6h-6zM594 306h6v6h-6zM78 312h18v6h-18zM120 312h18v6h-18zM162 312h18v6h-18zM444 312h18v6h-18zM486 312h18v6h-18zM588 312h18v6h-18zM84 318h6v12h-6zM126 318h6v12h-6zM168 318h6v12h-6zM438 318h30v6h-30zM480 318h30v6h-30zM582 318h30v6h-30zM444 324h18v6h-18zM486 324h18v6h-18zM588 324h18v6h-18zM450 330h6v12h-6zM492 330h6v12h-6zM594 330h6v12h-6zM594 348h6v6h-6zM588 354h18v6h-18zM582 360h30v6h-30zM588 366h18v6h-18zM594 372h6v12h-6zM84 408h6v6h-6zM78 414h18v6h-18zM72 420h30v12h-30zM126 426h6v6h-6zM168 426h6v6h-6zM78 432h18v6h-18zM120 432h18v6h-18zM162 432h18v6h-18zM84 438h6v12h-6zM114 438h30v6h-30zM156 438h30v6h-30zM120 444h18v6h-18zM162 444h18v6h-18zM78 450h6v6h-6zM90 450h6v6h-6zM126 450h6v12h-6zM168 450h6v12h-6zM84 456h6v6h-6zM126 468h6v6h-6zM120 474h18v6h-18zM534 474h6v6h-6zM114 480h30v6h-30zM528 480h18v6h-18zM120 486h18v6h-18zM522 486h30v6h-30zM126 492h6v12h-6zM528 492h18v6h-18zM534 498h6v12h-6zM126 510h6v6h-6zM120 516h18v6h-18zM114 522h30v6h-30zM120 528h18v6h-18zM126 534h6v12h-6z"/>
-<path fill="#9a7318" d="M30 210h6v6h-6zM42 210h6v6h-6zM54 210h6v6h-6zM36 216h18v6h-18zM30 222h30v6h-30zM36 228h18v6h-18zM36 234h6v6h-6zM48 234h6v6h-6zM30 240h6v6h-6zM54 240h6v6h-6zM72 468h6v6h-6zM84 468h6v6h-6zM96 468h6v6h-6zM78 474h18v6h-18zM606 474h6v6h-6zM618 474h6v6h-6zM630 474h6v6h-6zM72 480h30v6h-30zM612 480h18v6h-18zM78 486h18v6h-18zM606 486h30v6h-30zM78 492h6v6h-6zM90 492h6v6h-6zM612 492h18v6h-18zM72 498h6v6h-6zM96 498h6v6h-6zM612 498h6v6h-6zM624 498h6v6h-6zM606 504h6v6h-6zM630 504h6v6h-6z"/>
-<path fill="#b4bcb7" d="M336 156h18v6h-18zM378 156h18v6h-18zM336 198h18v6h-18zM252 240h18v6h-18zM336 240h18v6h-18zM378 240h18v6h-18zM294 336h18v6h-18zM294 378h18v6h-18zM336 378h18v6h-18zM294 492h18v6h-18zM252 534h18v6h-18zM294 534h18v6h-18zM528 546h18v6h-18z"/>
+<path fill="#3f8b52" d="M84 108h6v6h-6zM78 114h18v6h-18zM72 120h30v12h-30zM168 126h6v6h-6zM498 126h6v6h-6zM540 126h6v6h-6zM582 126h6v6h-6zM624 126h6v6h-6zM78 132h18v6h-18zM162 132h18v6h-18zM492 132h18v6h-18zM534 132h18v6h-18zM576 132h18v6h-18zM618 132h18v6h-18zM84 138h6v12h-6zM156 138h30v6h-30zM486 138h30v6h-30zM528 138h30v6h-30zM570 138h30v6h-30zM612 138h30v6h-30zM162 144h18v6h-18zM492 144h18v6h-18zM534 144h18v6h-18zM576 144h18v6h-18zM618 144h18v6h-18zM78 150h6v6h-6zM90 150h6v6h-6zM168 150h6v12h-6zM498 150h6v12h-6zM540 150h6v12h-6zM582 150h6v12h-6zM624 150h6v12h-6zM84 156h6v6h-6zM126 168h6v6h-6zM168 168h6v6h-6zM582 168h6v6h-6zM624 168h6v6h-6zM120 174h18v6h-18zM162 174h18v6h-18zM576 174h18v6h-18zM618 174h18v6h-18zM114 180h30v6h-30zM156 180h30v6h-30zM570 180h30v6h-30zM612 180h30v6h-30zM120 186h18v6h-18zM162 186h18v6h-18zM576 186h18v6h-18zM618 186h18v6h-18zM126 192h6v12h-6zM168 192h6v12h-6zM582 192h6v12h-6zM624 192h6v12h-6zM126 210h6v6h-6zM168 210h6v6h-6zM120 216h18v6h-18zM162 216h18v6h-18zM114 222h30v6h-30zM156 222h30v6h-30zM120 228h18v6h-18zM162 228h18v6h-18zM126 234h6v12h-6zM168 234h6v12h-6zM42 252h6v6h-6zM126 252h6v6h-6zM168 252h6v6h-6zM36 258h18v6h-18zM120 258h18v6h-18zM162 258h18v6h-18zM30 264h30v6h-30zM114 264h30v6h-30zM156 264h30v6h-30zM36 270h18v6h-18zM120 270h18v6h-18zM162 270h18v6h-18zM42 276h6v12h-6zM126 276h6v12h-6zM168 276h6v12h-6zM84 294h6v6h-6zM126 294h6v6h-6zM168 294h6v6h-6zM78 300h18v6h-18zM120 300h18v6h-18zM162 300h18v6h-18zM72 306h30v6h-30zM114 306h30v6h-30zM156 306h30v6h-30zM606 306h6v6h-6zM78 312h18v6h-18zM120 312h18v6h-18zM162 312h18v6h-18zM600 312h18v6h-18zM84 318h6v12h-6zM126 318h6v12h-6zM168 318h6v12h-6zM594 318h30v6h-30zM600 324h18v6h-18zM606 330h6v12h-6zM486 348h6v6h-6zM606 348h6v6h-6zM480 354h18v6h-18zM600 354h18v6h-18zM474 360h30v6h-30zM594 360h30v6h-30zM480 366h18v6h-18zM600 366h18v6h-18zM486 372h6v12h-6zM606 372h6v12h-6zM84 396h6v6h-6zM78 402h18v6h-18zM72 408h30v12h-30zM42 414h6v6h-6zM168 414h6v6h-6zM36 420h18v6h-18zM78 420h18v6h-18zM162 420h18v6h-18zM30 426h30v6h-30zM84 426h6v12h-6zM156 426h30v6h-30zM36 432h18v6h-18zM162 432h18v6h-18zM42 438h6v12h-6zM78 438h6v6h-6zM90 438h6v6h-6zM168 438h6v12h-6zM84 444h6v6h-6zM444 486h6v6h-6zM486 486h6v6h-6zM618 486h6v6h-6zM438 492h18v6h-18zM480 492h18v6h-18zM612 492h18v6h-18zM432 498h30v6h-30zM474 498h30v6h-30zM606 498h30v6h-30zM438 504h18v6h-18zM480 504h18v6h-18zM612 504h18v6h-18zM444 510h6v12h-6zM486 510h6v12h-6zM618 510h6v12h-6z"/>
+<path fill="#9a7318" d="M30 210h6v6h-6zM42 210h6v6h-6zM54 210h6v6h-6zM36 216h18v6h-18zM30 222h30v6h-30zM36 228h18v6h-18zM36 234h6v6h-6zM48 234h6v6h-6zM30 240h6v6h-6zM54 240h6v6h-6zM516 348h6v6h-6zM528 348h6v6h-6zM540 348h6v6h-6zM522 354h18v6h-18zM516 360h30v6h-30zM522 366h18v6h-18zM522 372h6v6h-6zM534 372h6v6h-6zM516 378h6v6h-6zM540 378h6v6h-6zM114 414h6v6h-6zM126 414h6v6h-6zM138 414h6v6h-6zM120 420h18v6h-18zM114 426h30v6h-30zM120 432h18v6h-18zM120 438h6v6h-6zM132 438h6v6h-6zM114 444h6v6h-6zM138 444h6v6h-6z"/>
+<path fill="#b4bcb7" d="M294 156h18v6h-18zM336 156h18v6h-18zM378 156h18v6h-18zM294 198h18v6h-18zM336 198h18v6h-18zM378 198h18v6h-18zM294 336h18v6h-18zM522 336h18v6h-18zM294 378h18v6h-18zM336 378h18v6h-18zM294 492h18v6h-18zM252 534h18v6h-18zM294 534h18v6h-18z"/>
 <path fill="#d9a520" d="M636 6h6v6h-6zM630 18h18v6h-18zM618 24h12v6h-12zM648 24h12v6h-12zM618 30h6v6h-6zM654 30h6v6h-6zM612 36h6v18h-6zM660 36h6v18h-6zM600 42h6v6h-6zM672 42h6v6h-6zM618 54h6v6h-6zM654 54h6v6h-6zM618 60h12v6h-12zM648 60h12v6h-12zM630 66h18v6h-18zM636 78h6v6h-6z"/>
 </g>
 <g fill="none" stroke-linecap="butt">
-<path class="fence" stroke="#9aa29e" stroke-width="2" d="M18 96H30M72 96H222M18 96V372M222 96V372M18 372H222"/>
-<path class="fence" stroke="#9aa29e" stroke-width="2" d="M18 396H30M204 396H222M18 396V414M222 396V414M18 576H36M204 576H222M18 558V576M222 558V576"/>
-<path class="fence" stroke="#9aa29e" stroke-width="2" d="M234 96H246M444 96H462M234 96V114M462 96V114M234 264H252M444 264H462M234 246V264M462 246V264"/>
-<path class="fence" stroke="#9aa29e" stroke-width="2" d="M474 96H486M582 96H702M474 96V264M702 96V264M474 264H702"/>
-<path class="fence" stroke="#9aa29e" stroke-width="2" d="M234 276H246M396 276H414M234 276V294M414 276V294M234 420H252M396 420H414M234 402V420M414 402V420"/>
-<path class="fence" stroke="#9aa29e" stroke-width="2" d="M234 432H246M396 432H414M234 432V450M414 432V450M234 576H252M396 576H414M234 558V576M414 558V576"/>
-<path class="fence" stroke="#9aa29e" stroke-width="2" d="M426 276H438M540 276H558M426 276V294M558 276V294M426 432H444M540 432H558M426 414V432M558 414V432"/>
-<path class="fence" stroke="#9aa29e" stroke-width="2" d="M570 276H582M690 276H702M570 276V432M702 276V432M570 432H702"/>
-<path class="fence broken" stroke="#9aa29e" stroke-width="2" d="M594 444H606M672 444H702M594 444V576M702 444V576M594 576H702"/>
-<path class="fence" stroke="#9aa29e" stroke-width="2" d="M426 444H438M564 444H582M426 444V462M582 444V462M426 576H444M564 576H582M426 558V576M582 558V576"/>
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M18 96H30M72 96H222M18 96V360M222 96V360M18 360H222"/>
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M18 384H30M204 384H222M18 384V402M222 384V402M18 576H36M204 576H222M18 558V576M222 558V576"/>
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M234 96H246M444 96H462M234 96V114M462 96V114M234 252H252M444 252H462M234 234V252M462 234V252"/>
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M474 96H486M582 96H702M474 96V252M702 96V252M474 252H702"/>
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M234 276H246M390 276H408M234 276V294M408 276V294M234 408H252M390 408H408M234 390V408M408 390V408"/>
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M234 432H246M390 432H408M234 432V450M408 432V450M234 576H252M390 576H408M234 558V576M408 558V576"/>
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M582 276H594M684 276H702M582 276V294M702 276V294M582 432H600M684 432H702M582 414V432M702 414V432"/>
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M420 456H432M540 456H582M420 456V576M582 456V576M420 576H582"/>
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M594 456H606M684 456H702M594 456V474M702 456V474M594 576H612M684 576H702M594 558V576M702 558V576"/>
+<path class="fence" stroke="#9aa29e" stroke-width="2" d="M420 276H432M552 276H570M420 276V294M570 276V294M420 432H438M552 432H570M420 414V432M570 414V432"/>
 </g>
 <g class="label" fill="#6b736f" font-size="10">
 <text x="36" y="99">farm/</text>
-<text x="36" y="399">./</text>
+<text x="36" y="387">./</text>
 <text x="252" y="99">git-farm-demo/farm/</text>
 <text x="492" y="99">internal/repo/</text>
 <text x="252" y="279">git-farm-demo/</text>
 <text x="252" y="435">git-farm-demo/cmd/</text>
-<text x="444" y="279">.github/</text>
-<text x="588" y="279">internal/gitlog/</text>
-<text x="612" y="447">git-farm/</text>
-<text x="444" y="447">other/</text>
+<text x="600" y="279">.github/</text>
+<text x="438" y="459">internal/gitlog/</text>
+<text x="612" y="459">cmd/</text>
+<text x="438" y="279">other/</text>
+</g>
+<g fill="transparent" pointer-events="all">
+<rect x="18" y="96" width="204" height="264"><title>farm/ — a hotspot, tests found — 13 files, 1 churned, 1 big</title></rect>
+<rect x="18" y="384" width="204" height="192"><title>./ — healthy, no rule here, so no claim — 7 files, 1 churned, 1 big</title></rect>
+<rect x="234" y="96" width="228" height="156"><title>git-farm-demo/farm/ — dead, no rule here, so no claim — 6 files, 6 deleted</title></rect>
+<rect x="474" y="96" width="228" height="156"><title>internal/repo/ — healthy, tests found — 6 files</title></rect>
+<rect x="234" y="276" width="174" height="132"><title>git-farm-demo/ — dead, no rule here, so no claim — 3 files, 3 deleted</title></rect>
+<rect x="234" y="432" width="174" height="144"><title>git-farm-demo/cmd/ — dead, no rule here, so no claim — 3 files, 3 deleted</title></rect>
+<rect x="582" y="276" width="120" height="156"><title>.github/ — healthy, no rule here, so no claim — 2 files</title></rect>
+<rect x="420" y="456" width="162" height="120"><title>internal/gitlog/ — healthy, tests found — 2 files</title></rect>
+<rect x="594" y="456" width="108" height="120"><title>cmd/ — healthy, no rule here, so no claim — 1 file</title></rect>
+<rect x="420" y="276" width="150" height="156"><title>other/ — healthy, no rule here, so no claim — 3 files, 1 churned, 1 deleted</title></rect>
 </g>
 <g class="walk">
 <g class="step-a">
 <g shape-rendering="crispEdges">
-<path fill="#3a3f3c" d="M456 372h18v12h-18zM444 390h6v6h-6zM480 390h6v6h-6z"/>
-<path fill="#7a52c9" d="M456 354h18v6h-18zM450 360h30v6h-30zM444 366h42v6h-42zM450 384h30v18h-30z"/>
-<path fill="#9aa29e" d="M456 402h6v18h-6zM468 402h6v18h-6z"/>
+<path fill="#3a3f3c" d="M48 516h18v12h-18zM36 534h6v6h-6zM72 534h6v6h-6z"/>
+<path fill="#7a52c9" d="M48 498h18v6h-18zM42 504h30v6h-30zM36 510h42v6h-42zM42 528h30v18h-30z"/>
+<path fill="#9aa29e" d="M48 546h6v18h-6zM60 546h6v18h-6z"/>
 </g>
 </g>
 <g class="step-b" fill-opacity="0">
 <g shape-rendering="crispEdges">
-<path fill="#3a3f3c" d="M456 372h18v12h-18zM444 390h6v6h-6zM480 390h6v6h-6z"/>
-<path fill="#7a52c9" d="M456 354h18v6h-18zM450 360h30v6h-30zM444 366h42v6h-42zM450 384h30v18h-30z"/>
-<path fill="#9aa29e" d="M456 402h12v6h-12zM450 408h6v12h-6zM468 408h6v6h-6zM474 414h6v6h-6z"/>
+<path fill="#3a3f3c" d="M48 516h18v12h-18zM36 534h6v6h-6zM72 534h6v6h-6z"/>
+<path fill="#7a52c9" d="M48 498h18v6h-18zM42 504h30v6h-30zM36 510h42v6h-42zM42 528h30v18h-30z"/>
+<path fill="#9aa29e" d="M48 546h12v6h-12zM42 552h6v12h-6zM60 552h6v6h-6zM66 558h6v6h-6z"/>
 </g>
+</g>
+<g fill="transparent" pointer-events="all">
+<rect x="36" y="498" width="42" height="66"><title>Haleh committed last, in ./</title></rect>
 </g>
 </g>
 </svg>
