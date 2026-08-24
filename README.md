@@ -56,6 +56,19 @@ committed last, standing where they committed.
 | a flat mark at ground level | a file that was deleted |
 | the farmer | the author of the newest commit, standing in that field |
 
+- [Quick start](#quick-start) — install it, or paste two files and let the repo draw itself
+- [Status](#status) — how far along the plan this is
+- [What it measures, and how much to trust it](#what-it-measures-and-how-much-to-trust-it) — the rules behind the marks, and where they are weak
+- [How the picture is put together](#how-the-picture-is-put-together) — treemap, sampling, themes
+- [The SVG](#the-svg) — one path per colour, real text, a farmer who walks
+- [The Action](#the-action) — what the inputs do, and why it publishes to an orphan branch
+- [Refusals](#refusals) — the four cases that error instead of drawing something wrong
+- [Flags](#flags) — every flag, and the config file
+- [Speed](#speed) — one git command, and a cache keyed on HEAD
+- [Safety](#safety) — what leaves the machine, which is nothing
+- [Layout](#layout) — the packages, and the bugs the tests caught
+- [License](#license) — MIT
+
 ## Quick start
 
 **In a terminal.**
