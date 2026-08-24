@@ -80,8 +80,26 @@ runs:
         base="https://github.com/${REPO}/releases/download/${version}"
 
         dir=$(mktemp -d)
-        curl -fsSL --retry 3 --retry-delay 2 -o "$dir/$archive" "$base/$archive"
-        curl -fsSL --retry 3 --retry-delay 2 -o "$dir/checksums.txt" "$base/checksums.txt"
+
+        # curl's own failure is "curl: (22) The requested URL returned error:
+        # 404", which tells somebody running this on their own repository for
+        # the first time nothing they can act on. The two ways this goes wrong
+        # are a release that was never published and a platform that release
+        # did not build, so say which one it looks like.
+        fetch() {
+          if curl -fsSL --retry 3 --retry-delay 2 -o "$dir/$1" "$base/$1"; then
+            return 0
+          fi
+          echo "::error::git-farm could not download $1 from the ${version} release."
+          echo "Release page: https://github.com/${REPO}/releases/tag/${version}"
+          echo "If that page is missing, the release has not been published yet — this"
+          echo "action downloads a released binary and cannot build one. If the page"
+          echo "exists but has no $1, that release has no build for ${os}/${arch}."
+          exit 1
+        }
+
+        fetch "$archive"
+        fetch checksums.txt
 
         # The checksum is the whole reason the download is safe to run. Verify
         # only the line for the file that was fetched, or the check passes on a
