@@ -2,16 +2,17 @@
 
 A repository drawn as a pixel farm, in the terminal and in your README.
 
-<!-- Drawn from the committed copy, so it works on a fresh clone. Once the
-     farm workflow has run once, this can point at the live branch instead:
-     https://raw.githubusercontent.com/bright98/git-farm/farm/farm.svg -->
+<!-- Drawn by this repository's own farm workflow, and published to the orphan
+     farm branch. Not committed here: see The Action for why. -->
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/farm-dark.svg">
-  <img alt="git-farm's own repository drawn as a farm: fields for its directories, fenced where tests were found" src=".github/farm.svg">
+  <source media="(prefers-color-scheme: dark)"
+          srcset="https://raw.githubusercontent.com/bright98/git-farm/farm/farm-dark.svg">
+  <img alt="git-farm's own repository drawn as a farm: fields for its directories, fenced where tests were found"
+       src="https://raw.githubusercontent.com/bright98/git-farm/farm/farm.svg">
 </picture>
 
-*This repository, drawn by itself. The small figure is whoever committed last,
-standing in the directory they committed to, and they walk.*
+*This repository, drawn by itself on every push. The small figure is whoever
+committed last, standing in the directory they committed to, and they walk.*
 
 ```
 git farm
