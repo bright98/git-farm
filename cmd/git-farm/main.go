@@ -469,19 +469,24 @@ func writeSVG(r *repo.Repo, path string, d drawing) error {
 		Title:   svgTitle(r),
 	}
 
-	files := []struct {
+	// The second file is the same farm after dark. A reader on a dark page is
+	// not literally awake at night, but the two things the night has — the moon
+	// instead of the sun, and a lantern lit beside the farmer — are the ones
+	// that belong on a dark page anyway, and drawing the pair as day and night
+	// makes them tell a reader apart at a glance rather than only in palette.
+	type file struct {
 		path  string
 		theme *farm.Theme
-	}{{path, d.theme}}
+		night bool
+	}
+	files := []file{{path, d.theme, d.night}}
 	if d.both {
-		files = append(files, struct {
-			path  string
-			theme *farm.Theme
-		}{darkName(path), &farm.Quiet})
+		files = append(files, file{darkName(path), &farm.Quiet, true})
 	}
 
 	for _, f := range files {
 		opts.Theme = f.theme
+		opts.Night = f.night
 		var buf bytes.Buffer
 		if err := scene.WriteSVG(&buf, opts); err != nil {
 			return err

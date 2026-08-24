@@ -187,7 +187,11 @@ directories.
 
 **Two files, because a file cannot ask.** `--theme both` writes `farm.svg` and
 `farm-dark.svg` with palettes tuned for a white and a dark page; neither paints
-a background, so the README shows through. `--theme full` paints its own little
+a background, so the README shows through. The dark one is the farm after dark:
+a crescent moon where the sun was, and a lantern lit beside the farmer. A reader
+on a dark page is not literally awake at night, but those are the two things the
+night has, and they are the two that belong on a dark page — and drawing the
+pair as day and night tells them apart at a glance rather than only in palette. `--theme full` paints its own little
 world and needs only one file.
 
 The quiet theme is built to sit on a dark terminal, which is the right default
