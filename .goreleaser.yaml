@@ -4,7 +4,10 @@ project_name: git-farm
 
 before:
   hooks:
-    - go mod tidy
+    # download, not tidy: tidy can rewrite go.mod, and goreleaser refuses to
+    # build from a dirty tree, so a stale go.sum would fail the release with a
+    # message about git rather than about modules.
+    - go mod download
     # A release that draws a wrong farm is worse than no release: the picture
     # is committed to somebody else's README and nobody looks at it twice.
     - go test ./...
