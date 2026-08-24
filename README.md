@@ -150,7 +150,7 @@ inputs do, and why the branch and the pinned SHA are what they are, is in
 
 ## Status
 
-**Phases 0 to 3 of [the plan](git-farm-plan.md) are done: it reads a repository,
+**Phases 0 to 3 of the plan are done: it reads a repository,
 draws it in the terminal, writes it as an SVG, and keeps that SVG up to date
 from a GitHub Action.** Still to come: the TUI (phase 4) and the time-lapse
 (phase 5).

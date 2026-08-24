@@ -2,3 +2,12 @@
 /dist/
 *.svg
 *.gif
+
+# Editors and tools, which are one person's setup rather than the project's.
+.idea/
+.vscode/
+.claude/
+
+# The planning document is written for whoever is building this, and quotes
+# private links and local paths. It stays out of the published repository.
+git-farm-plan.md
