@@ -56,6 +56,84 @@ committed last, standing where they committed.
 | a flat mark at ground level | a file that was deleted |
 | the farmer | the author of the newest commit, standing in that field |
 
+## Quick start
+
+**In a terminal.**
+
+```sh
+go install github.com/haleh/git-farm/cmd/git-farm@latest
+git farm
+```
+
+`git farm` works with a space in it because git runs any `git-farm` on your PATH
+as a subcommand, for free. There are prebuilt binaries on the
+[releases page](https://github.com/haleh/git-farm/releases) if you would rather
+not build one — linux and macOS, Intel and ARM.
+
+```sh
+git farm --theme full                 # the painted version, with sky and soil
+git farm --out farm.svg --theme both  # farm.svg and farm-dark.svg, for a README
+git farm --list                       # the same thing as a table
+git farm --json                       # the parsed repo, which the picture is drawn from
+git farm ~/src/some-repo              # somebody else's
+```
+
+**In your README.** Two files, and the repository grows its own farm on every
+push. Add `.github/workflows/farm.yml`:
+
+```yaml
+name: farm
+
+on:
+  push:
+    branches: [main]      # never the farm branch, or it triggers itself forever
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write         # the only permission it needs
+
+jobs:
+  grow:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # git-farm reads the whole history
+
+      - uses: haleh/git-farm@<commit-sha>
+        with:
+          out: farm.svg
+          theme: both     # writes farm.svg and farm-dark.svg
+          since: 5y
+
+      - name: publish
+        run: |
+          set -euo pipefail
+          git config user.name  "git-farm"
+          git config user.email "git-farm@users.noreply.github.com"
+          git checkout --orphan farm
+          git rm -rf --cached . > /dev/null
+          git add -f farm.svg farm-dark.svg
+          git commit -m "farm $(date -u +%F)"
+          git push -f origin farm
+```
+
+and point your `README.md` at the branch it publishes:
+
+```markdown
+<picture>
+  <source media="(prefers-color-scheme: dark)"
+          srcset="https://raw.githubusercontent.com/USER/REPO/farm/farm-dark.svg">
+  <img alt="the farm" src="https://raw.githubusercontent.com/USER/REPO/farm/farm.svg">
+</picture>
+```
+
+Run it once by hand from the Actions tab, and the picture is there. What the
+inputs do, and why the branch and the pinned SHA are what they are, is in
+[The Action](#the-action).
+
 ## Status
 
 **Phases 0 to 3 of [the plan](git-farm-plan.md) are done: it reads a repository,
@@ -63,14 +141,11 @@ draws it in the terminal, writes it as an SVG, and keeps that SVG up to date
 from a GitHub Action.** Still to come: the TUI (phase 4) and the time-lapse
 (phase 5).
 
+Working on it rather than with it:
+
 ```sh
-go build ./cmd/git-farm
-./git-farm                              # this repo, in this window
-./git-farm --theme full                 # the painted version, with sky and soil
-./git-farm --out farm.svg --theme both  # farm.svg and farm-dark.svg, for a README
-./git-farm --list                       # the same thing as a table
-./git-farm --json                       # the parsed repo, which the picture is drawn from
-./git-farm ~/src/some-repo
+go build ./cmd/git-farm && ./git-farm
+go test ./...
 ```
 
 ## What it measures, and how much to trust it
@@ -232,58 +307,7 @@ looks like one to git.
 
 ## The Action
 
-Two files, and a repository grows its own farm.
-
-`.github/workflows/farm.yml`:
-
-```yaml
-name: farm
-
-on:
-  push:
-    branches: [main]      # never the farm branch, or it triggers itself forever
-  schedule:
-    - cron: "17 4 * * *"
-  workflow_dispatch:
-
-permissions:
-  contents: write         # the only permission it needs
-
-jobs:
-  grow:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0  # git-farm reads the whole history
-
-      - uses: haleh/git-farm@<commit-sha>
-        with:
-          out: farm.svg
-          theme: both     # writes farm.svg and farm-dark.svg
-          since: 5y
-
-      - name: publish
-        run: |
-          set -euo pipefail
-          git config user.name  "git-farm"
-          git config user.email "git-farm@users.noreply.github.com"
-          git checkout --orphan farm
-          git rm -rf --cached . > /dev/null
-          git add -f farm.svg farm-dark.svg
-          git commit -m "farm $(date -u +%F)"
-          git push -f origin farm
-```
-
-and in `README.md`:
-
-```markdown
-<picture>
-  <source media="(prefers-color-scheme: dark)"
-          srcset="https://raw.githubusercontent.com/USER/REPO/farm/farm-dark.svg">
-  <img alt="the farm" src="https://raw.githubusercontent.com/USER/REPO/farm/farm.svg">
-</picture>
-```
+The two files to paste are in [Quick start](#quick-start). This is what they do.
 
 | Input | Default | |
 |---|---|---|
@@ -296,8 +320,8 @@ and in `README.md`:
 
 **The branch is the part to get right.** Committing `farm.svg` to `main` on
 every push grows the repository forever and fills its history with "update
-farm". The `farm` branch above is an orphan, force-pushed: always exactly one
-commit holding two files, and `main` never hears about it.
+farm". The `farm` branch the publish step makes is an orphan, force-pushed:
+always exactly one commit holding two files, and `main` never hears about it.
 
 **Pin to a commit SHA, not a tag.** A tag can be moved and a SHA cannot, and
 this is an action that runs on your repository with `contents: write`. The
