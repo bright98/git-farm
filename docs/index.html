@@ -81,6 +81,21 @@
   .stage svg, .stage img { display: block; width: 100%; height: auto; }
   figcaption { color: var(--muted); font-size: 15px; margin-top: 12px; max-width: 62ch; }
 
+  /* ---- day / night switch ---- */
+  .sky {
+    display: inline-flex; gap: 2px; margin: 18px 0 0;
+    padding: 3px; border: 1px solid var(--line); border-radius: 999px;
+    background: var(--panel);
+  }
+  .sky button {
+    appearance: none; border: 0; cursor: pointer;
+    padding: 7px 16px; border-radius: 999px;
+    background: transparent; color: var(--muted);
+    font: 500 13px/1 var(--sans); letter-spacing: 0.01em;
+  }
+  .sky button[aria-pressed="true"] { background: var(--accent); color: var(--bg); }
+  .sky button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
   /* ---- install ---- */
   .install {
     display: inline-flex; align-items: center; gap: 12px;
@@ -138,13 +153,23 @@
 
   <figure>
     <div class="stage" id="hero">
-      <img alt="git-farm's own repository drawn as a farm" src="farm.svg">
+      <img alt="git-farm's own repository drawn as a farm" src="farm.svg" data-day="farm.svg" data-night="farm-night.svg">
     </div>
     <figcaption>
       This repository, drawn by itself, redrawn on every push. Hover a field for what it is.
       A directory is a field, a file is a plant.
     </figcaption>
   </figure>
+
+  <div class="sky" role="group" aria-label="Draw the farm by day or at night">
+    <button type="button" data-sky="day" aria-pressed="true">Day</button>
+    <button type="button" data-sky="night" aria-pressed="false">Night</button>
+  </div>
+  <p class="tip">
+    Every farm on this page, in either theme. At night the sun is a crescent moon, the sky
+    fills with stars, and the farmer carries a lantern — <code>--night=auto</code> turns it on
+    by itself when the last commit was made after its author’s own midnight.
+  </p>
 
   <div class="install"><span class="dollar">$</span> go install github.com/bright98/git-farm/cmd/git-farm@latest</div>
   <p class="tip">No server, no account, no network. It runs <code>git log</code> in the folder you are standing in and draws a picture.</p>
@@ -189,8 +214,10 @@
   <figure>
     <div class="stage">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="farm-quiet-dark.svg">
-        <img alt="the same farm in the quiet theme, painting no background" src="farm-quiet.svg">
+        <source media="(prefers-color-scheme: dark)" srcset="farm-quiet-dark.svg"
+                data-day="farm-quiet-dark.svg" data-night="farm-quiet-night-dark.svg">
+        <img alt="the same farm in the quiet theme, painting no background" src="farm-quiet.svg"
+             data-day="farm-quiet.svg" data-night="farm-quiet-night.svg">
       </picture>
     </div>
     <figcaption>The same repository, the same commit, the same farm — drawn <code>quiet</code>.</figcaption>
@@ -302,25 +329,50 @@
 </main>
 
 <script>
-  // Swap the hero for the SVG itself, so its titles become real tooltips.
-  // A README cannot do this: GitHub embeds the file with <img>, which makes it
-  // an image document with no DOM to hover. Here it is the same file, inlined.
-  fetch("farm.svg")
-    .then(function (r) { return r.ok ? r.text() : Promise.reject(); })
-    .then(function (svg) {
-      var stage = document.getElementById("hero");
-      var img = stage.querySelector("img");
-      stage.innerHTML = svg;
-      var el = stage.querySelector("svg");
-      if (el) {
+(function () {
+  var hero = document.getElementById("hero");
+
+  // Inlining the hero is the only place the tooltips built into the SVG can
+  // work: a README embeds the file with <img>, which makes it an image
+  // document with no DOM to hover. Same file, one fetch, real tooltips.
+  function inline(src) {
+    return fetch(src)
+      .then(function (r) { return r.ok ? r.text() : Promise.reject(); })
+      .then(function (svg) {
+        var keep = hero.querySelector("img");
+        hero.innerHTML = svg;
+        var el = hero.querySelector("svg");
+        if (!el) { hero.innerHTML = ""; hero.appendChild(keep); return; }
         el.removeAttribute("width");
         el.removeAttribute("height");
         el.setAttribute("role", "img");
-      } else if (img) {
-        stage.appendChild(img); // put it back rather than leave a hole
-      }
-    })
-    .catch(function () { /* the <img> is already there */ });
+      })
+      .catch(function () {
+        // Leave whatever is already there. A farm that does not animate beats
+        // a hole where the farm was.
+      });
+  }
+
+  function setSky(when) {
+    document.querySelectorAll("[data-day][data-night]").forEach(function (el) {
+      var src = el.getAttribute("data-" + when);
+      if (el.tagName === "SOURCE") el.srcset = src;
+      else el.src = src;
+    });
+    document.querySelectorAll(".sky button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.dataset.sky === when));
+    });
+    // The hero is inlined, so it is not an <img> any more and swapping a src
+    // would do nothing. Fetch the other one and inline that instead.
+    inline(when === "night" ? "farm-night.svg" : "farm.svg");
+  }
+
+  document.querySelectorAll(".sky button").forEach(function (b) {
+    b.addEventListener("click", function () { setSky(b.dataset.sky); });
+  });
+
+  inline("farm.svg");
+})();
 </script>
 </body>
 </html>

@@ -23,11 +23,22 @@ go build -o "$bin" ./cmd/git-farm
 mkdir -p "$out"
 cp docs/index.html "$out/"
 
-# --night=auto with the value attached: --night reports itself boolean so that
-# a bare --night still means yes, and a boolean flag never consumes the next
+# Day and night for both themes, because the page has a switch and because the
+# night farm is otherwise something the page describes and never shows.
+#
+# Explicitly day and explicitly night rather than auto: a switch labelled "day"
+# that drew the night farm — which is what auto would do after midnight — is a
+# switch that lies. Auto is what the README uses and what the page explains.
+#
+# The value is attached to --night, always: it reports itself boolean so that a
+# bare --night still means yes, and a boolean flag never consumes the next
 # argument. Spelled with a space, "auto" would become the path.
-"$bin" --out "$out/farm.svg" --theme full --night=auto .
-"$bin" --out "$out/farm-quiet.svg" --theme both .
+"$bin" --out "$out/farm.svg"       --theme full --night=false .
+"$bin" --out "$out/farm-night.svg" --theme full --night=true  .
+
+"$bin" --out "$out/farm-quiet.svg"       --theme both --night=false .
+"$bin" --out "$out/farm-quiet-night.svg" --theme both --night=true  .
+
 "$bin" --gif "$out/history.gif" .
 
 echo "built $out"
