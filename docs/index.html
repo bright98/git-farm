@@ -79,6 +79,15 @@
     overflow: hidden;
   }
   .stage svg, .stage img { display: block; width: 100%; height: auto; }
+
+  /* The GIF is the one raster picture here: 360x240 of deliberate pixels.
+     Stretched to the full width a browser smooths it into mush, so it is told
+     not to interpolate and held to exactly twice its own size — 720 and not a
+     round-looking 750, because a fractional scale puts some pixels across two
+     and leaves the rest on one, which reads as a wobble. Everything else on
+     the page is vector and needs none of this. */
+  .stage.raster { width: fit-content; margin-inline: auto; }
+  .stage.raster img { image-rendering: pixelated; width: 720px; max-width: 100%; }
   figcaption { color: var(--muted); font-size: 15px; margin-top: 12px; max-width: 62ch; }
 
   /* ---- day / night switch ---- */
@@ -211,14 +220,20 @@
     and it still reads without any colour at all, because the plants are held apart by silhouette
     before colour.
   </p>
+  <div class="sky" role="group" aria-label="Show the quiet theme for a light or a dark terminal">
+    <button type="button" data-page="light" aria-pressed="true">Light</button>
+    <button type="button" data-page="dark" aria-pressed="false">Dark</button>
+  </div>
+  <p class="tip" style="margin-bottom:18px">
+    Two palettes, because a file cannot ask its reader whether the page behind it is light or
+    dark. This starts on whichever your system is set to — and the Day/Night switch above works
+    on this one too, so there are four farms here.
+  </p>
+
   <figure>
     <div class="stage">
-      <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="farm-quiet-dark.svg"
-                data-day="farm-quiet-dark.svg" data-night="farm-quiet-night-dark.svg">
-        <img alt="the same farm in the quiet theme, painting no background" src="farm-quiet.svg"
-             data-day="farm-quiet.svg" data-night="farm-quiet-night.svg">
-      </picture>
+      <img id="quiet" alt="the same farm in the quiet theme, painting no background"
+           src="quiet-light-day.svg">
     </div>
     <figcaption>The same repository, the same commit, the same farm — drawn <code>quiet</code>.</figcaption>
   </figure>
@@ -287,7 +302,7 @@
     growing.
   </p>
   <figure>
-    <div class="stage">
+    <div class="stage raster">
       <img alt="this repository's history played back as a time-lapse" src="history.gif" loading="lazy">
     </div>
     <figcaption>
@@ -331,47 +346,53 @@
 <script>
 (function () {
   var hero = document.getElementById("hero");
+  var quiet = document.getElementById("quiet");
 
-  // Inlining the hero is the only place the tooltips built into the SVG can
-  // work: a README embeds the file with <img>, which makes it an image
-  // document with no DOM to hover. Same file, one fetch, real tooltips.
-  function inline(src) {
+  // Two independent questions, and the quiet theme answers both: is it night
+  // on the farm, and is the page behind it light or dark. Four files.
+  var sky = "day";
+  var page = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+
+  // Inlining the hero is the only place the SVG's own tooltips can work: a
+  // README embeds the file with <img>, which makes it an image document with
+  // no DOM to hover. Same file, one fetch, real tooltips.
+  function inlineHero() {
+    var src = sky === "night" ? "farm-night.svg" : "farm.svg";
     return fetch(src)
       .then(function (r) { return r.ok ? r.text() : Promise.reject(); })
       .then(function (svg) {
         var keep = hero.querySelector("img");
         hero.innerHTML = svg;
         var el = hero.querySelector("svg");
-        if (!el) { hero.innerHTML = ""; hero.appendChild(keep); return; }
+        if (!el) { hero.innerHTML = ""; if (keep) hero.appendChild(keep); return; }
         el.removeAttribute("width");
         el.removeAttribute("height");
         el.setAttribute("role", "img");
       })
       .catch(function () {
-        // Leave whatever is already there. A farm that does not animate beats
-        // a hole where the farm was.
+        // Leave what is on screen. A farm that will not switch beats a hole
+        // where the farm was.
       });
   }
 
-  function setSky(when) {
-    document.querySelectorAll("[data-day][data-night]").forEach(function (el) {
-      var src = el.getAttribute("data-" + when);
-      if (el.tagName === "SOURCE") el.srcset = src;
-      else el.src = src;
-    });
+  function render() {
+    quiet.src = "quiet-" + page + "-" + sky + ".svg";
     document.querySelectorAll(".sky button").forEach(function (b) {
-      b.setAttribute("aria-pressed", String(b.dataset.sky === when));
+      var want = b.dataset.sky || b.dataset.page;
+      var have = b.dataset.sky ? sky : page;
+      b.setAttribute("aria-pressed", String(want === have));
     });
-    // The hero is inlined, so it is not an <img> any more and swapping a src
-    // would do nothing. Fetch the other one and inline that instead.
-    inline(when === "night" ? "farm-night.svg" : "farm.svg");
+    inlineHero();
   }
 
   document.querySelectorAll(".sky button").forEach(function (b) {
-    b.addEventListener("click", function () { setSky(b.dataset.sky); });
+    b.addEventListener("click", function () {
+      if (b.dataset.sky) sky = b.dataset.sky; else page = b.dataset.page;
+      render();
+    });
   });
 
-  inline("farm.svg");
+  render();
 })();
 </script>
 </body>

@@ -36,8 +36,16 @@ cp docs/index.html "$out/"
 "$bin" --out "$out/farm.svg"       --theme full --night=false .
 "$bin" --out "$out/farm-night.svg" --theme full --night=true  .
 
-"$bin" --out "$out/farm-quiet.svg"       --theme both --night=false .
-"$bin" --out "$out/farm-quiet-night.svg" --theme both --night=true  .
+# All four spelled out, rather than two runs of --theme both. "both" pairs a
+# light page with day and a dark page with night on purpose — a dark README
+# wants a moon — so it can never produce the dark palette by day, which is
+# exactly one of the four squares the switches can ask for.
+#
+# quiet is the palette for a dark page; quiet-light is the one for a light page.
+"$bin" --out "$out/quiet-light-day.svg"   --theme quiet-light --night=false .
+"$bin" --out "$out/quiet-light-night.svg" --theme quiet-light --night=true  .
+"$bin" --out "$out/quiet-dark-day.svg"    --theme quiet       --night=false .
+"$bin" --out "$out/quiet-dark-night.svg"  --theme quiet       --night=true  .
 
 "$bin" --gif "$out/history.gif" .
 
