@@ -89,6 +89,11 @@ type Repo struct {
 	LastAuthor string `json:"last_author,omitempty"`
 	LastDir    string `json:"last_dir,omitempty"`
 
+	// LastChange is when that commit was made, in its author's own timezone.
+	// It is the farmer's clock: the one commit the picture is already about,
+	// so if the farm is drawn at night it is that person's night.
+	LastChange time.Time `json:"last_change,omitzero"`
+
 	Config Config  `json:"config"`
 	Dirs   []*Dir  `json:"dirs"`
 	Files  []*File `json:"files"`
@@ -160,9 +165,10 @@ type accumulator struct {
 	// only thing in it that is about a person, and the SVG its only moving
 	// part. The newest commit's own time still sets the clock; only the person
 	// and the place come from the newest commit that did something.
-	touched    time.Time
-	lastAuthor string
-	lastPaths  []string
+	touched      time.Time
+	touchedLocal time.Time
+	lastAuthor   string
+	lastPaths    []string
 }
 
 type stat struct {
@@ -188,7 +194,8 @@ func (a *accumulator) add(c gitlog.Commit) error {
 		a.last = c.When
 	}
 	if len(c.Changes) > 0 && (c.When.After(a.touched) || a.touched.IsZero()) {
-		a.touched, a.lastAuthor, a.lastPaths = c.When, c.Author, nil
+		a.touched, a.touchedLocal = c.When, c.Local
+		a.lastAuthor, a.lastPaths = c.Author, nil
 		for _, ch := range c.Changes {
 			a.lastPaths = append(a.lastPaths, ch.Path)
 		}
@@ -411,6 +418,7 @@ func (r *Repo) rollUp(root string, head map[string]bool, cfg Config, acc *accumu
 	if len(acc.lastPaths) > 0 {
 		r.LastDir = fieldOf(acc.lastPaths[0], cfg.Depth)
 	}
+	r.LastChange = acc.touchedLocal
 }
 
 // fieldOf cuts a path down to the field it belongs to. Files at the top level

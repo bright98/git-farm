@@ -40,6 +40,12 @@ type Commit struct {
 	Email   string
 	When    time.Time // always UTC
 	Subject string
+
+	// Local is the same moment in the author's own timezone, which is the only
+	// way to say what hour they committed at. Two people commit at the same
+	// instant and one of them is up after midnight; %at cannot tell them apart
+	// because it has already thrown the offset away.
+	Local time.Time
 	Changes []Change
 }
 
@@ -136,7 +142,9 @@ func HeadFiles(dir string) (map[string]bool, error) {
 // all, including something that looks exactly like a file path.
 const headerMark = '\x01'
 
-const logFormat = "%x01%H|%an|%ae|%at|%s"
+// %aI carries the author's timezone offset, which %at does not. It goes before
+// the subject, because a subject is the one field allowed to contain a pipe.
+const logFormat = "%x01%H|%an|%ae|%at|%aI|%s"
 
 // Walk streams the history through fn, oldest commit first.
 //
@@ -233,20 +241,31 @@ func parse(r io.Reader, fn func(Commit) error) error {
 // parseHeader reads "hash|author|email|unix-time|subject". The subject is last
 // precisely so that a "|" in it cannot break the split.
 func parseHeader(s string) (Commit, bool) {
-	f := strings.SplitN(s, "|", 5)
-	if len(f) < 5 {
+	f := strings.SplitN(s, "|", 6)
+	if len(f) < 6 {
 		return Commit{}, false
 	}
 	secs, err := strconv.ParseInt(f[3], 10, 64)
 	if err != nil {
 		return Commit{}, false
 	}
+	when := time.Unix(secs, 0).UTC() // UTC everywhere, or two runs disagree
+
+	// A repository written by a git too old for %aI, or by something that
+	// wrote a date it will not admit to, still has a usable moment. It just
+	// has no hour of its own, so it borrows UTC's.
+	local, err := time.Parse(time.RFC3339, f[4])
+	if err != nil {
+		local = when
+	}
+
 	return Commit{
 		Hash:    f[0],
 		Author:  f[1],
 		Email:   f[2],
-		When:    time.Unix(secs, 0).UTC(), // UTC everywhere, or two runs disagree
-		Subject: f[4],
+		When:    when,
+		Local:   local,
+		Subject: f[5],
 	}, true
 }
 

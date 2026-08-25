@@ -27,6 +27,10 @@ inputs:
     description: Write directory names on the fields and name whoever committed last. Set false to draw the farm with nobody named.
     required: false
     default: "true"
+  night:
+    description: 'Draw the farm at night: true, false, or auto — auto means the last commit was made after its author''s own midnight. With theme "both", false still draws the dark file at night; auto makes both files follow the commit.'
+    required: false
+    default: "false"
   version:
     description: The git-farm release to run. Empty means the one this action was published with, which is what you want.
     required: false
@@ -129,6 +133,7 @@ runs:
         SINCE: ${{ inputs.since }}
         DEPTH: ${{ inputs.depth }}
         NAMES: ${{ inputs.names }}
+        NIGHT: ${{ inputs.night }}
       run: |
         set -euo pipefail
 
@@ -141,6 +146,9 @@ runs:
         fi
         if [ "$NAMES" = "false" ]; then
           args+=(--names=false)
+        fi
+        if [ -n "$NIGHT" ]; then
+          args+=(--night="$NIGHT")
         fi
 
         "$BIN" "${args[@]}"

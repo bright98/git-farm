@@ -292,6 +292,31 @@ a README page is light until its reader says otherwise. So `--out` with no
 `--theme` writes the light palette, and `--theme quiet` still writes the dark one
 for a page that wants it.
 
+**Night is a fact about the repository, if you ask for it.** `--night=auto`
+draws the moon and lights the farmer's lantern when the last commit that
+changed a file was made after midnight — by its author's own clock, not by
+UTC, because "committed after midnight" is a claim about a person and not
+about Greenwich. Somebody committing at 02:14 in Tehran did it after midnight;
+the same instant is a quarter to eleven the previous evening in London, and
+reading it as UTC would put them out in broad daylight.
+
+That is why the log is read with `%aI` rather than `%at`: an epoch is an
+instant and has already thrown the offset away. The clock is the same commit
+the farmer comes from, so if the farm is drawn at night it is that person's
+night.
+
+It stays deterministic, which the Action depends on: the hour comes from the
+commit, not from when the picture was drawn, so two runs a week apart over the
+same commit still produce the same bytes.
+
+`--theme both` treats the sky differently depending on which question it was
+asked. Left alone, the pair is day and night — a reader on a dark page is not
+literally awake, but the moon and the lantern are what a dark page suits. Set
+to `auto`, the sky stops being a decision about the page and becomes a fact
+about the repository, and a fact cannot be true in one file and false in the
+other; both files then say what the commit's clock said, and the difference
+between them goes back to being palette alone.
+
 **The farmer walks, and nothing else moves.** CSS keyframes over a static
 background — never `<script>`, which GitHub strips. The two frames are swapped
 with `fill-opacity` rather than `opacity`: a README embeds the file with `<img>`,
@@ -330,6 +355,7 @@ The two files to paste are in [Quick start](#quick-start). This is what they do.
 | `since` | `5y` | ignore history older than this |
 | `depth` | | how many path segments a field name keeps |
 | `names` | `true` | `false` draws the farm with nobody named |
+| `night` | `false` | `true`, `false`, or `auto` |
 | `version` | | the release to run; empty means the one the action ships with |
 
 **The branch is the part to get right.** Committing `farm.svg` to `main` on
@@ -373,7 +399,7 @@ instead:
 | `--color` | `auto` | `auto`, `full`, `256`, `16`, `none` |
 | `--no-color` | | shorthand for `--color none`; `NO_COLOR` does the same |
 | `--names` | `true` | directory names on the fields, and who committed last |
-| `--night` | | draw it at night |
+| `--night` | `false` | `true`, `false`, or `auto` — see below |
 | `--width`, `--height` | fit the window | |
 | `--list` | | the fields as a table instead of a picture |
 | `--json` | | the parsed repo; the debugging escape hatch |

@@ -479,3 +479,44 @@ func TestFarmerSkipsACommitThatChangedNothing(t *testing.T) {
 		t.Errorf("the newest commit is %v, want %v", got.Last, want)
 	}
 }
+
+// The farmer's clock. It has to be the author's own, because "committed after
+// midnight" is a claim about a person and not about Greenwich: the commit
+// below is made at 02:14 in a +03:30 zone, which is the previous evening in
+// UTC, and reading it as UTC would put the farmer out in broad daylight.
+func TestLastChangeKeepsTheAuthorsZone(t *testing.T) {
+	r := newTestRepo(t)
+
+	r.write("internal/ui/view.go", "package ui\n")
+	r.add(".")
+	r.commit("Ada", "ada@example.com", 2*year, "add the ui")
+
+	// Committed at 02:14 +03:30, spelled as the instant plus the offset.
+	when := "2026-08-20T02:14:00+03:30"
+	r.write("cmd/tool/main.go", "package main\n")
+	r.add(".")
+	cmd := exec.Command("git", "commit", "-q", "-a", "-m", "late night",
+		"--author", "Bo <bo@example.com>")
+	cmd.Dir = r.dir
+	cmd.Env = append(os.Environ(),
+		"GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_SYSTEM=/dev/null",
+		"GIT_AUTHOR_DATE="+when, "GIT_COMMITTER_DATE="+when)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("git commit: %v\n%s", err, out)
+	}
+
+	got, err := Build(r.dir, Defaults(), Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if h := got.LastChange.Hour(); h != 2 {
+		t.Errorf("the last change reads as hour %d, want 2 — the author's own", h)
+	}
+	if h := got.Last.UTC().Hour(); h != 22 {
+		t.Errorf("the newest commit is hour %d in UTC, want 22", h)
+	}
+	if !got.LastChange.Equal(got.Last) {
+		t.Error("LastChange and Last are different instants; only the zone should differ")
+	}
+}

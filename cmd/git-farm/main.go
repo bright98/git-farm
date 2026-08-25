@@ -49,7 +49,7 @@ func run() error {
 		colorName  = flag.String("color", "auto", "auto, full, 256, 16 or none")
 		noColor    = flag.Bool("no-color", false, "shorthand for --color none; NO_COLOR does the same")
 		names      = flag.Bool("names", true, "write directory names on the fields and say who committed last")
-		night      = flag.Bool("night", false, "draw the farm at night")
+		night      nightMode // registered below, because it is not a plain bool
 		width      = flag.Int("width", 0, "terminal columns (default: fit the window)")
 		height     = flag.Int("height", 0, "terminal rows (default: fit the window)")
 		asList     = flag.Bool("list", false, "print the fields as a table instead of a picture")
@@ -61,6 +61,8 @@ func run() error {
 		noCache    = flag.Bool("no-cache", false, "re-read the history even if a cached answer exists")
 		showVer    = flag.Bool("version", false, "print the version and exit")
 	)
+
+	flag.Var(&night, "night", "draw the farm at night: true, false, or auto — auto means the last commit was made after its author's own midnight")
 
 	flag.Usage = usage
 	flag.Parse()
@@ -148,7 +150,7 @@ func run() error {
 		theme:   theme,
 		profile: profile,
 		names:   *names,
-		night:   *night,
+		night:   night,
 		width:   *width,
 		height:  *height,
 		scale:   *scale,
@@ -163,7 +165,8 @@ func run() error {
 type drawing struct {
 	theme         *farm.Theme
 	profile       farm.Profile
-	names, night  bool
+	names         bool
+	night         nightMode
 	width, height int
 	scale         int
 	both          bool
@@ -183,7 +186,7 @@ func drawFarm(r *repo.Repo, d drawing) error {
 	}
 
 	scene := farm.FromRepo(r)
-	opts := farm.Options{Theme: d.theme, Night: d.night, Names: d.names}
+	opts := farm.Options{Theme: d.theme, Night: d.night.at(r), Names: d.names}
 	picture := scene.Render(cols, rows, opts, d.profile)
 
 	// Drawn is only known once the scene has been laid out against a real
@@ -422,6 +425,74 @@ func flagSet(name string) bool {
 	return found
 }
 
+// nightMode is the --night flag, which has three settings rather than two.
+//
+// It is a flag.Value that reports itself as a boolean, so `--night` on its own
+// still means yes and `--night=auto` means "ask the repository". Making it a
+// plain string flag would have broken the bare form, which is the one people
+// type.
+type nightMode int
+
+const (
+	nightOff nightMode = iota
+	nightOn
+	nightAuto
+)
+
+func (n nightMode) String() string {
+	switch n {
+	case nightOn:
+		return "true"
+	case nightAuto:
+		return "auto"
+	default:
+		return "false"
+	}
+}
+
+func (n *nightMode) Set(v string) error {
+	switch strings.ToLower(v) {
+	case "true", "1", "yes", "on":
+		*n = nightOn
+	case "false", "0", "no", "off":
+		*n = nightOff
+	case "auto":
+		*n = nightAuto
+	default:
+		return fmt.Errorf("night is true, false or auto, not %q", v)
+	}
+	return nil
+}
+
+// IsBoolFlag is what lets `--night` stand on its own.
+func (n *nightMode) IsBoolFlag() bool { return true }
+
+// smallHours is when a commit counts as having been made at night: from
+// midnight until dawn, by the author's own clock rather than by UTC, because
+// "committed after midnight" is a claim about the person and not about
+// Greenwich.
+const (
+	nightFrom = 0 // inclusive
+	nightTo   = 6 // exclusive
+)
+
+// at resolves the flag against the repository. Only auto asks a question; the
+// other two already know the answer.
+func (n nightMode) at(r *repo.Repo) bool {
+	switch n {
+	case nightOn:
+		return true
+	case nightAuto:
+		if r.LastChange.IsZero() {
+			return false // no commit changed anything, so nobody was up late
+		}
+		h := r.LastChange.Hour()
+		return h >= nightFrom && h < nightTo
+	default:
+		return false
+	}
+}
+
 func usage() {
 	fmt.Fprint(os.Stderr, `git farm — a repository drawn as a pixel farm
 
@@ -458,30 +529,43 @@ func writeSVG(r *repo.Repo, path string, d drawing) error {
 	}
 
 	scene := farm.FromRepo(r)
+	night := d.night.at(r)
 	opts := farm.SVGOptions{
 		Theme:   d.theme,
 		Cols:    cols,
 		Rows:    rows,
 		Scale:   d.scale,
 		Names:   d.names,
-		Night:   d.night,
+		Night:   night,
 		Animate: true,
 		Title:   svgTitle(r),
 	}
 
-	// The second file is the same farm after dark. A reader on a dark page is
-	// not literally awake at night, but the two things the night has — the moon
-	// instead of the sun, and a lantern lit beside the farmer — are the ones
-	// that belong on a dark page anyway, and drawing the pair as day and night
-	// makes them tell a reader apart at a glance rather than only in palette.
+	// The second file is the same farm for a dark page. Whether it is also at
+	// night depends on which question --night was asked.
+	//
+	// Left alone, the pair is day and night: a reader on a dark page is not
+	// literally awake, but the moon and the lantern are the two things the
+	// night has and they are the two that suit a dark page, so the files tell
+	// each other apart at a glance rather than only in palette.
+	//
+	// Set to auto, the sky stops being a decision about the page and becomes a
+	// fact about the repository — and a fact cannot be true in one file and
+	// false in the other. Both files then say what the last commit's own clock
+	// said, and the difference between them goes back to being palette alone.
 	type file struct {
 		path  string
 		theme *farm.Theme
 		night bool
 	}
-	files := []file{{path, d.theme, d.night}}
+
+	files := []file{{path, d.theme, night}}
 	if d.both {
-		files = append(files, file{darkName(path), &farm.Quiet, true})
+		dark := true
+		if d.night == nightAuto {
+			dark = night
+		}
+		files = append(files, file{darkName(path), &farm.Quiet, dark})
 	}
 
 	for _, f := range files {

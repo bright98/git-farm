@@ -12,12 +12,12 @@ func log(lines ...string) string { return strings.Join(lines, "\n") + "\n" }
 
 func TestParseCommits(t *testing.T) {
 	in := log(
-		"\x01abc123|Ada|ada@example.com|1700000000|add the store",
+		"\x01abc123|Ada|ada@example.com|1700000000|2023-11-15T01:43:20+03:30|add the store",
 		"",
 		"12\t3\tinternal/store/matches.go",
 		"5\t0\tinternal/store/matches_test.go",
 		"",
-		"\x01def456|Bo|bo@example.com|1700086400|tidy up",
+		"\x01def456|Bo|bo@example.com|1700086400|2023-11-16T01:43:20+03:30|tidy up",
 		"",
 		"1\t1\tREADME.md",
 	)
@@ -62,7 +62,7 @@ func TestParseCommits(t *testing.T) {
 // looks exactly like a numstat line. The \x01 marker is what keeps them apart.
 func TestParseSubjectWithSeparators(t *testing.T) {
 	in := log(
-		"\x01abc|Ada|ada@example.com|1700000000|fix a|b|c and 1\t2\tfake.go",
+		"\x01abc|Ada|ada@example.com|1700000000|2023-11-15T01:43:20+03:30|fix a|b|c and 1\t2\tfake.go",
 		"",
 		"4\t0\treal.go",
 	)
@@ -82,11 +82,11 @@ func TestParseSubjectWithSeparators(t *testing.T) {
 
 func TestParseBinaryAndEmptyCommit(t *testing.T) {
 	in := log(
-		"\x01abc|Ada|ada@example.com|1700000000|add a logo",
+		"\x01abc|Ada|ada@example.com|1700000000|2023-11-15T01:43:20+03:30|add a logo",
 		"",
 		"-\t-\tdocs/logo.png",
 		"",
-		"\x01def|Ada|ada@example.com|1700000001|merge branch 'main'",
+		"\x01def|Ada|ada@example.com|1700000001|2023-11-15T01:43:21+03:30|merge branch 'main'",
 		"",
 	)
 
@@ -141,11 +141,11 @@ func TestSplitRename(t *testing.T) {
 // unchanged rather than wrapped in something about git.
 func TestParseStopsOnError(t *testing.T) {
 	in := log(
-		"\x01a|Ada|ada@example.com|1700000000|one",
+		"\x01a|Ada|ada@example.com|1700000000|2023-11-15T01:43:20+03:30|one",
 		"",
 		"1\t0\ta.go",
 		"",
-		"\x01b|Ada|ada@example.com|1700000001|two",
+		"\x01b|Ada|ada@example.com|1700000001|2023-11-15T01:43:21+03:30|two",
 		"",
 		"1\t0\tb.go",
 	)
@@ -168,3 +168,56 @@ func TestParseStopsOnError(t *testing.T) {
 type errStop struct{}
 
 func (errStop) Error() string { return "stop" }
+
+// %at is an instant and says nothing about the hour its author saw. Two people
+// commit at the same moment and one of them is up at two in the morning; the
+// offset is the only thing that can tell them apart, so it has to survive the
+// parse.
+func TestParseKeepsTheAuthorsOwnHour(t *testing.T) {
+	// 1700000000 is 2023-11-14T22:13:20Z, which is the next day at +03:30.
+	lines := []string{
+		"\x01abc|Ada|ada@example.com|1700000000|2023-11-15T01:43:20+03:30|late",
+		"1\t0\ta.go",
+	}
+
+	var got []Commit
+	if err := parse(strings.NewReader(log(lines...)), func(c Commit) error {
+		got = append(got, c)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 {
+		t.Fatalf("got %d commits, want 1", len(got))
+	}
+
+	if h := got[0].When.Hour(); h != 22 {
+		t.Errorf("When is hour %d, want 22: When stays UTC", h)
+	}
+	if h := got[0].Local.Hour(); h != 1 {
+		t.Errorf("Local is hour %d, want 1: the author committed after their own midnight", h)
+	}
+	if !got[0].Local.Equal(got[0].When) {
+		t.Error("Local and When are different instants; only the zone should differ")
+	}
+}
+
+// A log with no %aI in it — an older git, or a fixture written by hand — still
+// parses. It just has no hour of its own.
+func TestParseWithoutAnOffsetFallsBackToUTC(t *testing.T) {
+	lines := []string{
+		"\x01abc|Ada|ada@example.com|1700000000|not a date|subject",
+		"1\t0\ta.go",
+	}
+
+	var got []Commit
+	if err := parse(strings.NewReader(log(lines...)), func(c Commit) error {
+		got = append(got, c)
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || !got[0].Local.Equal(got[0].When) {
+		t.Fatalf("a commit with an unreadable date should borrow UTC's hour")
+	}
+}
