@@ -14,7 +14,9 @@ cd "$(dirname "$0")/.."
 out=${1:-_site}
 port=${2:-}
 
-bin=$(mktemp -t git-farm)
+# The XXXXXX matters: BSD mktemp takes a bare prefix and GNU mktemp refuses
+# one, so a template that works on a laptop can fail on the runner.
+bin=$(mktemp -t git-farm.XXXXXX)
 trap 'rm -f "$bin"' EXIT
 go build -o "$bin" ./cmd/git-farm
 
