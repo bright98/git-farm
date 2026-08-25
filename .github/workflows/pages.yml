@@ -32,25 +32,10 @@ jobs:
       # Built from this commit rather than downloaded from a release. The page
       # is documentation of the code beside it, so it has to be drawn by that
       # code: a released binary would be describing whatever the last tag did.
-      - name: draw the pictures
-        run: |
-          set -euo pipefail
-          go build -o /tmp/git-farm ./cmd/git-farm
-
-          mkdir -p _site
-          cp docs/index.html _site/
-
-          # Every picture on the page, generated here. Nothing is committed and
-          # nothing is copied from elsewhere, so the page cannot describe a
-          # git-farm that no longer exists.
-          # --night=auto, attached: --night reports itself boolean so that a
-          # bare --night still means yes, and a boolean flag never consumes the
-          # next argument. Spelled with a space, "auto" becomes the path.
-          /tmp/git-farm --out _site/farm.svg --theme full --night=auto .
-          /tmp/git-farm --out _site/farm-quiet.svg --theme both .
-          /tmp/git-farm --gif _site/history.gif .
-
-          ls -la _site
+      # One script, called from here and from a terminal, so that what you
+      # can look at locally and what gets published cannot drift apart.
+      - name: build the site
+        run: ./docs/build.sh _site
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

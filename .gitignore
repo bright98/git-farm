@@ -12,3 +12,4 @@
 # The planning document is written for whoever is building this, and quotes
 # private links and local paths. It stays out of the published repository.
 git-farm-plan.md
+_site/

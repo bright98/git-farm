@@ -25,15 +25,19 @@
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0e100f;
-      --panel: #151817;
-      --ink: #e9ebea;
-      --muted: #9aa29e;
-      --line: #262b29;
+      /* Dark slate rather than black: the blue channel is the highest of the
+         three, so it reads as a dark grey with some blue in it rather than as
+         an absence. Black behind a pixel farm makes the farm look like a
+         sticker; this sits behind it. */
+      --bg: #22272e;
+      --panel: #2b3138;
+      --ink: #dbe3ec;
+      --muted: #9aa7b4;
+      --line: #3a424c;
       --accent: #d7bcff;
       --green: #8fd39a;
       --amber: #f2d98a;
-      --grey: #79817d;
+      --grey: #7d8892;
     }
   }
 
