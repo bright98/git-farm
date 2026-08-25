@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>git-farm — a repository drawn as a pixel farm</title>
+<meta name="description" content="git-farm reads git log and draws your repository as a pixel farm: a field per directory, a plant per file, a fence where it found tests. In the terminal, in your README, and as a time-lapse.">
+<meta property="og:title" content="git-farm">
+<meta property="og:description" content="A repository drawn as a pixel farm. It looks like a toy, and it is a code health map.">
+<meta property="og:image" content="https://raw.githubusercontent.com/bright98/git-farm/farm/farm.svg">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🌾</text></svg>">
+<style>
+  :root {
+    --bg: #fbfaf8;
+    --panel: #ffffff;
+    --ink: #1b1f1d;
+    --muted: #6b736f;
+    --line: #e3e1dc;
+    --accent: #6d43c4;
+    --green: #3f8b52;
+    --amber: #8a6714;
+    --grey: #a8b0ac;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "DejaVu Sans Mono", monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0e100f;
+      --panel: #151817;
+      --ink: #e9ebea;
+      --muted: #9aa29e;
+      --line: #262b29;
+      --accent: #d7bcff;
+      --green: #8fd39a;
+      --amber: #f2d98a;
+      --grey: #79817d;
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 17px/1.65 var(--sans);
+    letter-spacing: -0.005em;
+  }
+  main { max-width: 980px; margin: 0 auto; padding: 0 24px 96px; }
+  section { margin: 0 0 88px; }
+  h1, h2, h3 { line-height: 1.2; letter-spacing: -0.02em; margin: 0; }
+  p { margin: 0 0 1em; max-width: 68ch; }
+  a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  code, kbd { font-family: var(--mono); font-size: 0.9em; }
+  .muted { color: var(--muted); }
+
+  /* ---- hero ---- */
+  header { padding: 72px 0 48px; }
+  .wordmark {
+    font-family: var(--mono);
+    font-size: clamp(34px, 7vw, 56px);
+    font-weight: 600;
+    letter-spacing: -0.03em;
+  }
+  .wordmark span { color: var(--accent); }
+  .lede { font-size: clamp(19px, 2.4vw, 23px); color: var(--muted); margin-top: 14px; max-width: 34ch; }
+
+  /* ---- the picture ---- */
+  figure { margin: 0; }
+  .stage {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 14px;
+    overflow: hidden;
+  }
+  .stage svg, .stage img { display: block; width: 100%; height: auto; }
+  figcaption { color: var(--muted); font-size: 15px; margin-top: 12px; max-width: 62ch; }
+
+  /* ---- install ---- */
+  .install {
+    display: inline-flex; align-items: center; gap: 12px;
+    margin-top: 28px; padding: 12px 16px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    font-family: var(--mono); font-size: 14px;
+  }
+  .install .dollar { color: var(--muted); user-select: none; }
+
+  /* ---- legend ---- */
+  .legend { display: grid; gap: 2px 28px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .legend div {
+    display: grid; grid-template-columns: 2.2em 1fr; gap: 12px; align-items: baseline;
+    padding: 9px 0; border-bottom: 1px solid var(--line);
+  }
+  .legend b { font-family: var(--mono); font-weight: 600; font-size: 19px; text-align: center; }
+  .g { color: var(--green); } .a { color: var(--amber); }
+  .r { color: var(--grey); } .p { color: var(--accent); }
+
+  /* ---- features ---- */
+  .feature { border-top: 1px solid var(--line); padding-top: 40px; }
+  .feature h2 { font-size: 26px; }
+  .feature .cmd {
+    display: inline-block; font-family: var(--mono); font-size: 14px;
+    color: var(--accent); margin: 6px 0 18px;
+  }
+
+  pre {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; overflow-x: auto; margin: 0;
+    font-family: var(--mono); font-size: 13px; line-height: 1.45;
+  }
+  pre.term { font-size: 12.5px; line-height: 1.3; white-space: pre; }
+  .cursor { color: var(--accent); }
+  .k { color: var(--muted); }
+
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  td, th { text-align: left; padding: 9px 14px 9px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-weight: 600; }
+
+  footer {
+    border-top: 1px solid var(--line); padding: 32px 0 0;
+    color: var(--muted); font-size: 15px;
+    display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between;
+  }
+  .tip { color: var(--muted); font-size: 14px; margin-top: 10px; }
+</style>
+</head>
+<body>
+<main>
+
+<header>
+  <div class="wordmark">git <span>farm</span></div>
+  <p class="lede">A repository drawn as a pixel farm — in your terminal, in your README, and back through its own history.</p>
+
+  <figure>
+    <div class="stage" id="hero">
+      <img alt="git-farm's own repository drawn as a farm" src="farm.svg">
+    </div>
+    <figcaption>
+      This repository, drawn by itself, redrawn on every push. Hover a field for what it is.
+      A directory is a field, a file is a plant.
+    </figcaption>
+  </figure>
+
+  <div class="install"><span class="dollar">$</span> go install github.com/bright98/git-farm/cmd/git-farm@latest</div>
+  <p class="tip">No server, no account, no network. It runs <code>git log</code> in the folder you are standing in and draws a picture.</p>
+</header>
+
+<section>
+  <h2>It looks like a toy</h2>
+  <p>
+    It is really a code health map. Three of the things it draws are true and useful, and the rest is
+    weather. Every mark is a rank inside <em>your</em> repository, never a fixed number — “more than
+    forty commits is a hotspot” makes a small project look immaculate and a large one look doomed.
+  </p>
+
+  <div class="legend">
+    <div><b class="g">✦</b><span>a green upright plant — a file that changed recently</span></div>
+    <div><b class="g">♣</b><span>a tall plant — a big file, by line count</span></div>
+    <div><b class="a">✽</b><span><strong>a weed</strong> — churn: many authors, many commits, one file</span></div>
+    <div><b class="r">⌄</b><span>a bent grey plant — untouched for a year</span></div>
+    <div><b class="r">▁</b><span>a flat mark at ground level — a file that was deleted</span></div>
+    <div><b class="p">☻</b><span>the farmer — whoever committed last, standing where they committed</span></div>
+    <div><b>▭</b><span>a fenced field — the directory has tests</span></div>
+    <div><b>┄</b><span>a broken fence — no test files were found</span></div>
+    <div><b>⌐</b><span>corners only — no rule applies here, so no claim is made</span></div>
+  </div>
+
+  <p style="margin-top:28px">
+    That last one matters more than it looks. The fence is the one claim that can be wrong in public,
+    on somebody else’s README — so a directory of SQL migrations gets no verdict at all rather than a
+    wrong one.
+  </p>
+</section>
+
+<section class="feature">
+  <h2>In the terminal</h2>
+  <div class="cmd">git farm</div>
+  <p>
+    The quiet theme paints no sky, no grass and no soil, so your session shows through and the farm
+    sits <em>in</em> the terminal rather than covering it. Truecolor degrades to 256, to 16, to none —
+    and it still reads without any colour at all, because the plants are held apart by silhouette
+    before colour.
+  </p>
+  <figure>
+    <div class="stage">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="farm-quiet-dark.svg">
+        <img alt="the same farm in the quiet theme, painting no background" src="farm-quiet.svg">
+      </picture>
+    </div>
+    <figcaption>The same repository, the same commit, the same farm — drawn <code>quiet</code>.</figcaption>
+  </figure>
+</section>
+
+<section class="feature">
+  <h2>In your README</h2>
+  <div class="cmd">git farm --out farm.svg --theme both</div>
+  <p>
+    Every row is cut into runs of one colour and every rectangle of one colour goes into a single
+    <code>&lt;path&gt;</code>: a 120×72 farm is 8,640 pixels and comes out as about seventy elements.
+    The names are real <code>&lt;text&gt;</code>, the fences are real strokes, and the farmer walks on
+    CSS keyframes — never a <code>&lt;script&gt;</code>, which GitHub strips.
+  </p>
+  <p>
+    Two files, because a file cannot ask its reader whether the page is light or dark. The same bytes
+    every time, so a re-run over an unchanged repository is genuinely a no-op.
+  </p>
+  <p>Add two files and a GitHub Action keeps it up to date on every push:</p>
+  <pre><span class="k"># .github/workflows/farm.yml</span>
+- uses: actions/checkout@v5
+  with: { fetch-depth: 0 }
+
+- uses: bright98/git-farm@v0.3.0
+  with:
+    out: farm.svg
+    theme: full
+    night: auto
+
+<span class="k"># then force-push farm.svg to an orphan branch: one commit, forever</span></pre>
+  <p class="tip">
+    The picture goes on a branch with no history, force-pushed, so your <code>main</code> never fills
+    with “update farm”. The Action downloads a released binary and checks it against the release’s
+    <code>checksums.txt</code> before running anything.
+  </p>
+</section>
+
+<section class="feature">
+  <h2>Walk around it</h2>
+  <div class="cmd">git farm --watch</div>
+  <p>
+    The picture answers what shape a repository is. This answers the next question, which is
+    <em>which file</em>. A cursor moves between fields; enter opens one and the cursor runs down its
+    files, worst first — churned, deleted, quiet, big, the rest. That is the same order the picture
+    uses to decide what a square shows, so the list is the field’s own reasoning written out.
+  </p>
+  <pre class="term">  internal/gitlog/ — healthy, tests found · 2 files
+  internal/gitlog/  2 files, worst first
+  ──────────────────────────────────────────────────────────────────────
+<span class="cursor">▸</span> ✦ gitlog.go                          379 lines    4 ✎   1 ✍  today
+  ✦ gitlog_test.go                     223 lines    2 ✎   1 ✍  today</pre>
+  <p class="tip">
+    The cursor is a mark and not only a colour, because <code>--no-color</code>, a dumb
+    <code>TERM</code> and a pipe all paint nothing — and a farm you cannot find your cursor in is not
+    navigable.
+  </p>
+</section>
+
+<section class="feature">
+  <h2>The whole history, played back</h2>
+  <div class="cmd">git farm --gif history.gif</div>
+  <p>
+    The layout is computed once and never again. Every frame pours its own crop into the same fields,
+    so what moves is the crop and not the ground — re-running the treemap per frame would re-flow the
+    farm whenever a directory appeared, and the eye would follow the rearranging instead of the
+    growing.
+  </p>
+  <figure>
+    <div class="stage">
+      <img alt="this repository's history played back as a time-lapse" src="history.gif" loading="lazy">
+    </div>
+    <figcaption>
+      One frame per commit here. On an older repository it becomes a day, a week, or a month —
+      whatever keeps the file small enough to put in a README.
+    </figcaption>
+  </figure>
+  <p class="tip">
+    A field for every directory the history ever had, sized by the biggest it ever was. Sizing from
+    HEAD is the obvious thing, and it hides the most interesting half: a directory that grew for two
+    years and was deleted last month would never appear, grow, or die.
+  </p>
+</section>
+
+<section class="feature">
+  <h2>What it refuses to do</h2>
+  <p>
+    Four cases produce a farm that is quietly wrong, so they produce an error instead: not a git
+    repository, a repository with no commits, a shallow clone, and a window too small to read.
+  </p>
+  <table>
+    <tr><th style="width:34%">Claim</th><th>How it is decided</th></tr>
+    <tr><td>big</td><td>lines in the top 10% of files in this repository</td></tr>
+    <tr><td>weed</td><td><code>commits × distinct authors</code> in the top 10%</td></tr>
+    <tr><td>quiet</td><td>no commit has touched it for more than a year</td></tr>
+    <tr><td>deleted</td><td>in the history, but not in the HEAD tree</td></tr>
+  </table>
+  <p class="tip" style="margin-top:18px">
+    Time is measured back from the newest commit, never from today — so two runs a week apart over
+    the same commit draw the same farm.
+  </p>
+</section>
+
+<footer>
+  <span>MIT. Built in Go, no network calls, nothing leaves the machine.</span>
+  <span><a href="https://github.com/bright98/git-farm">github.com/bright98/git-farm</a></span>
+</footer>
+
+</main>
+
+<script>
+  // Swap the hero for the SVG itself, so its titles become real tooltips.
+  // A README cannot do this: GitHub embeds the file with <img>, which makes it
+  // an image document with no DOM to hover. Here it is the same file, inlined.
+  fetch("farm.svg")
+    .then(function (r) { return r.ok ? r.text() : Promise.reject(); })
+    .then(function (svg) {
+      var stage = document.getElementById("hero");
+      var img = stage.querySelector("img");
+      stage.innerHTML = svg;
+      var el = stage.querySelector("svg");
+      if (el) {
+        el.removeAttribute("width");
+        el.removeAttribute("height");
+        el.setAttribute("role", "img");
+      } else if (img) {
+        stage.appendChild(img); // put it back rather than leave a hole
+      }
+    })
+    .catch(function () { /* the <img> is already there */ });
+</script>
+</body>
+</html>

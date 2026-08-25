@@ -1,0 +1,68 @@
+name: pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One build at a time, and let a newer push win: the site is a picture of main,
+# so an older build finishing last would publish an older repository.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # git-farm reads the whole history and refuses a shallow clone
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # Built from this commit rather than downloaded from a release. The page
+      # is documentation of the code beside it, so it has to be drawn by that
+      # code: a released binary would be describing whatever the last tag did.
+      - name: draw the pictures
+        run: |
+          set -euo pipefail
+          go build -o /tmp/git-farm ./cmd/git-farm
+
+          mkdir -p _site
+          cp docs/index.html _site/
+
+          # Every picture on the page, generated here. Nothing is committed and
+          # nothing is copied from elsewhere, so the page cannot describe a
+          # git-farm that no longer exists.
+          # --night=auto, attached: --night reports itself boolean so that a
+          # bare --night still means yes, and a boolean flag never consumes the
+          # next argument. Spelled with a space, "auto" becomes the path.
+          /tmp/git-farm --out _site/farm.svg --theme full --night=auto .
+          /tmp/git-farm --out _site/farm-quiet.svg --theme both .
+          /tmp/git-farm --gif _site/history.gif .
+
+          ls -la _site
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
