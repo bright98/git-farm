@@ -60,7 +60,7 @@ runs:
         # binary that sha was released with. A tag can be moved and a version
         # inferred from github.action_ref cannot survive being pinned to a SHA,
         # which is how everyone should be pinning this.
-        DEFAULT_VERSION: v0.1.0
+        DEFAULT_VERSION: v0.2.0
         INPUT_VERSION: ${{ inputs.version }}
         REPO: bright98/git-farm
       run: |
