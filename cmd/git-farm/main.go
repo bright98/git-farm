@@ -24,10 +24,13 @@ import (
 
 	"golang.org/x/term"
 
+	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/bright98/git-farm/farm"
 	"github.com/bright98/git-farm/internal/cache"
 	"github.com/bright98/git-farm/internal/gitlog"
 	"github.com/bright98/git-farm/internal/repo"
+	"github.com/bright98/git-farm/internal/tui"
 )
 
 // version is stamped by the release build; the default is what a `go build`
@@ -52,6 +55,7 @@ func run() error {
 		night      nightMode // registered below, because it is not a plain bool
 		width      = flag.Int("width", 0, "terminal columns (default: fit the window)")
 		height     = flag.Int("height", 0, "terminal rows (default: fit the window)")
+		watch      = flag.Bool("watch", false, "open the farm in a window you can walk around in")
 		asList     = flag.Bool("list", false, "print the fields as a table instead of a picture")
 		asJSON     = flag.Bool("json", false, "print the parsed repository as JSON and stop")
 		since      = flag.String("since", "5y", "ignore history older than this, measured back from the newest commit")
@@ -159,6 +163,9 @@ func run() error {
 	if *out != "" {
 		return writeSVG(r, *out, d)
 	}
+	if *watch {
+		return watchFarm(r, d)
+	}
 	return drawFarm(r, d)
 }
 
@@ -172,7 +179,26 @@ type drawing struct {
 	both          bool
 }
 
-// drawFarm prints one frame and exits. The animated version is the TUI, later.
+// watchFarm hands the farm to Bubble Tea, which owns the screen until q.
+//
+// The alt screen, so the session it was run from is still there afterwards —
+// the quiet theme is built to sit in a terminal without covering it, and a
+// program that scrolls the farm into the scrollback undoes that.
+func watchFarm(r *repo.Repo, d drawing) error {
+	if len(r.Files) == 0 {
+		return fmt.Errorf("no files in the window --since kept: try a longer --since")
+	}
+
+	p := tea.NewProgram(
+		tui.New(r, d.profile, d.night.at(r)),
+		tea.WithAltScreen(),
+	)
+	_, err := p.Run()
+	return err
+}
+
+// drawFarm prints one frame and exits. The version you can walk around in is
+// --watch.
 func drawFarm(r *repo.Repo, d drawing) error {
 	cols, rows := windowSize(d.width, d.height)
 	if cols < farm.MinCols || rows < farm.MinRows {

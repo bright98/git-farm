@@ -62,6 +62,7 @@ committed last, standing where they committed.
 - [What it measures, and how much to trust it](#what-it-measures-and-how-much-to-trust-it) — the rules behind the marks, and where they are weak
 - [How the picture is put together](#how-the-picture-is-put-together) — treemap, sampling, themes
 - [The SVG](#the-svg) — one path per colour, real text, a farmer who walks
+- [Walking around it](#walking-around-it) — `--watch`, a cursor, and what is under it
 - [The Action](#the-action) — what the inputs do, and why it publishes to an orphan branch
 - [Refusals](#refusals) — the four cases that error instead of drawing something wrong
 - [Flags](#flags) — every flag, and the config file
@@ -85,6 +86,7 @@ as a subcommand, for free. There are prebuilt binaries on the
 not build one — linux and macOS, Intel and ARM.
 
 ```sh
+git farm --watch                      # walk around it: a cursor, and what is under it
 git farm --theme full                 # the painted version, with sky and soil
 git farm --out farm.svg --theme both  # farm.svg and farm-dark.svg, for a README
 git farm --list                       # the same thing as a table
@@ -172,9 +174,9 @@ inputs do, and why the branch and the pinned SHA are what they are, is in
 
 ## Status
 
-**Phases 0 to 3 of the plan are done: it reads a repository,
-draws it in the terminal, writes it as an SVG, and keeps that SVG up to date
-from a GitHub Action.** Still to come: the TUI (phase 4) and the time-lapse
+**Phases 0 to 4 of the plan are done: it reads a repository, draws it in the
+terminal, writes it as an SVG, keeps that SVG up to date from a GitHub Action,
+and gives you a farm you can walk around in.** Still to come: the time-lapse
 (phase 5).
 
 Working on it rather than with it:
@@ -382,6 +384,44 @@ nothing is timestamped, and the file is not rewritten when it has not changed �
 so a re-run over an unchanged repository is genuinely a no-op, not one that only
 looks like one to git.
 
+## Walking around it
+
+`git farm --watch` opens the farm in a window and gives you a cursor. The
+picture answers what shape a repository is; this answers the next question,
+which is *which file*.
+
+Two levels, and deliberately no more. On the farm the cursor moves between
+fields, and the line under the picture says what that directory is — its kind,
+what its fence claims, and the counts behind both. Enter opens one, and the
+cursor moves down its files, worst first: churned, then deleted, then quiet,
+then big, then the rest. That order is the same one the picture uses to decide
+what a square shows, so the list is the field's own reasoning written out. The
+status line then names a file, its size, how many commits and how many people
+have touched it, and when it last changed. A third level would be a file
+browser, and there are better file browsers than this one.
+
+| key | |
+|---|---|
+| `←` `↑` `↓` `→` or `hjkl` | move between fields, or down a list |
+| `enter` | open the field under the cursor |
+| `esc` | back to the farm |
+| `t` | swap themes |
+| `n` | night |
+| `q` | quit |
+
+Moving is by direction, not by index. A treemap has no rows and no columns, so
+"right" means the nearest field whose centre is to the right, weighted so that
+one almost straight ahead beats one that is marginally closer but well off to
+the side.
+
+**The cursor is a mark, not just a colour.** It recolours the field's edge and
+its name, and it also writes a `▸` beside the name — because `--no-color`, a
+`TERM` of `dumb` and a pipe all paint nothing, and a farm you cannot find your
+cursor in is not navigable.
+
+It runs on the alt screen, so the session you started it from is still there
+when you quit.
+
 ## The Action
 
 The two files to paste are in [Quick start](#quick-start). This is what they do.
@@ -493,6 +533,7 @@ The picture shows directory paths, and the name of whoever committed last.
 | `internal/gitlog/` | runs `git log --numstat` and stream-parses it, including renames |
 | `internal/repo/` | files rolled into directories, and the four kinds decided |
 | `internal/cache/` | the parsed repo, keyed on HEAD |
+| `internal/tui/` | the farm you can walk around in: `--watch` |
 | `farm/` | the canvas, the themes, the treemap, the drawing and the SVG |
 | `action.yml` | the composite Action: downloads a released binary, checks it, runs it |
 | `.goreleaser.yaml` | the release build — linux and darwin, amd64 and arm64 |

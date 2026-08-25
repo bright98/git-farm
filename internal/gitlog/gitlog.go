@@ -45,7 +45,7 @@ type Commit struct {
 	// way to say what hour they committed at. Two people commit at the same
 	// instant and one of them is up after midnight; %at cannot tell them apart
 	// because it has already thrown the offset away.
-	Local time.Time
+	Local   time.Time
 	Changes []Change
 }
 

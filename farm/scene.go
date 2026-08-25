@@ -64,6 +64,17 @@ type Options struct {
 	// NoFarmer leaves the farmer out, for a caller that draws them separately —
 	// which is what animating them without redrawing the whole farm requires.
 	NoFarmer bool
+
+	// Cursor is the field a cursor is resting on, counted from one. Its fence
+	// and its name are drawn in the accent, which is the one colour the quiet
+	// theme otherwise spends only on a big file — there is no cursor in a
+	// picture nobody is pointing at, so the two never appear together.
+	//
+	// Counted from one because zero has to mean "nobody is pointing at
+	// anything": the farm is drawn far more often with no cursor than with
+	// one, and every caller that predates the TUI leaves this field alone.
+	// Zero-based, they would all silently light up their first field.
+	Cursor int
 }
 
 func (o Options) theme() *Theme {
@@ -276,7 +287,7 @@ func (s *Scene) Draw(c *Canvas, o Options) {
 		if i == s.Farmer {
 			_, _, reserve = farmerFor(t, f.rect)
 		}
-		drawField(c, t, f, o, reserve)
+		drawField(c, t, f, o, reserve, i+1 == o.Cursor)
 	}
 
 	if o.Night && t.Ground {
@@ -458,8 +469,15 @@ func drawGround(c *Canvas, t *Theme, skyH int) {
 	}
 }
 
-func drawField(c *Canvas, t *Theme, f Field, o Options, reserve int) {
+func drawField(c *Canvas, t *Theme, f Field, o Options, reserve int, selected bool) {
 	r := f.rect
+
+	// The cursor recolours the edge and the name rather than drawing a box of
+	// its own. A second rectangle around a rectangle reads as another field.
+	fence, label := t.Colour(RoleFence), t.Colour(RoleLabel)
+	if selected {
+		fence, label = t.Colour(RoleHat), t.Colour(RoleHat)
+	}
 
 	if t.Ground {
 		// Tilled soil, in rows, so an empty field still looks like a field.
@@ -476,9 +494,9 @@ func drawField(c *Canvas, t *Theme, f Field, o Options, reserve int) {
 	}
 
 	plantField(c, t, f, r.X+2, r.Y+2, r.W-4, r.H-4-reserve)
-	from, to, label := 0, 0, ""
+	from, to, name := 0, 0, ""
 	if o.Names {
-		from, to, label = LabelSpan(r, f.Name)
+		from, to, name = LabelSpan(r, f.Name)
 	}
 
 	if o.Vector {
@@ -493,11 +511,19 @@ func drawField(c *Canvas, t *Theme, f Field, o Options, reserve int) {
 		return
 	}
 
-	drawFence(c, t, r, f.Fence, 0, 0)
-	if label != "" {
+	drawFenceIn(c, t, r, f.Fence, 0, 0, fence)
+	if name != "" {
 		// The overlay replaces both pixels of every cell it touches, so it goes
 		// on after the fence and simply takes those cells over.
-		c.SetText(from, r.Y/2, " "+label+" ", t.Colour(RoleLabel))
+		c.SetText(from, r.Y/2, " "+name+" ", label)
+
+		// And the cursor gets a mark of its own, in the space the name already
+		// leaves for it. Colour alone would put the cursor somewhere a mono
+		// terminal cannot see it at all — --no-color, a dumb TERM, a pipe —
+		// and a farm you cannot find your cursor in is not navigable.
+		if selected {
+			c.SetText(from, r.Y/2, "▸", label)
+		}
 	}
 }
 
@@ -527,7 +553,16 @@ func LabelSpan(r Rect, name string) (from, to int, label string) {
 // claim is being made — a Rust file with its tests inline, a directory of SQL
 // migrations, a language nobody has checked the convention for.
 func drawFence(c *Canvas, t *Theme, r Rect, fence Fence, gapFrom, gapTo int) {
-	line, post := t.Colour(RoleFence), t.Colour(RoleFencePost)
+	drawFenceIn(c, t, r, fence, gapFrom, gapTo, t.Colour(RoleFence))
+}
+
+// drawFenceIn is drawFence with the rail colour handed in, which is how a
+// cursor marks the field it is resting on without drawing anything new.
+func drawFenceIn(c *Canvas, t *Theme, r Rect, fence Fence, gapFrom, gapTo int, line color.RGBA) {
+	post := t.Colour(RoleFencePost)
+	if line != t.Colour(RoleFence) {
+		post = line // a highlighted edge is one colour, posts included
+	}
 
 	if t.Border == BorderGlyph {
 		drawGlyphBorder(c, r, line, post, fence)
@@ -704,4 +739,71 @@ func dim(c *Canvas, t *Theme, x, y, w, h int, k float64) {
 			c.Set(x+dx, y+dy, lerp(px, skyNight, k))
 		}
 	}
+}
+
+// A Direction is which way a cursor was asked to move.
+type Direction int
+
+const (
+	Left Direction = iota
+	Right
+	Up
+	Down
+)
+
+// Neighbour is the field a cursor should move to from here, or the field it
+// started on when there is nothing that way.
+//
+// The farm is a treemap, not a grid: fields have no rows and no columns, and
+// the next field to the right of a tall one may be any of three stacked beside
+// it. So "right" means the nearest field whose centre is to the right, scored
+// by how far across it is plus how far it is off the line — the sideways
+// distance weighed more heavily, so a field almost straight ahead beats one
+// that is marginally closer but well off to one side.
+func (s *Scene) Neighbour(from int, d Direction) int {
+	if from < 0 || from >= len(s.Fields) {
+		return from
+	}
+	here := s.Fields[from].rect
+	if here.W == 0 {
+		return from
+	}
+	hx, hy := here.X+here.W/2, here.Y+here.H/2
+
+	best, bestScore := from, 0
+	for i, f := range s.Fields {
+		if i == from || f.rect.W == 0 {
+			continue
+		}
+		cx, cy := f.rect.X+f.rect.W/2, f.rect.Y+f.rect.H/2
+
+		// along is distance in the direction asked for, off is distance
+		// perpendicular to it. A candidate must actually be that way.
+		var along, off int
+		switch d {
+		case Left:
+			along, off = hx-cx, abs(cy-hy)
+		case Right:
+			along, off = cx-hx, abs(cy-hy)
+		case Up:
+			along, off = hy-cy, abs(cx-hx)
+		case Down:
+			along, off = cy-hy, abs(cx-hx)
+		}
+		if along <= 0 {
+			continue
+		}
+
+		// Pixels are twice as tall as they are wide on screen, so a vertical
+		// step covers half the ground a horizontal one does. Scoring them the
+		// same makes up and down feel reluctant.
+		if d == Up || d == Down {
+			along *= 2
+		}
+		score := along + off*3
+		if best == from || score < bestScore {
+			best, bestScore = i, score
+		}
+	}
+	return best
 }
