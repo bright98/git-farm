@@ -146,7 +146,9 @@ jobs:
 background, so the farm sits *in* your README and borrows the page. `full`
 paints its own world — sky, clouds, tilled soil, wooden fences — and writes a
 single file that looks the same on any page. The picture at the top of this
-README is `full`; run `git farm --theme quiet` in a terminal to see the other.
+README is `full`, and [the one further down](#how-the-picture-is-put-together)
+is the same farm drawn `quiet` — both are published by this repository's own
+workflow, from the same commit.
 
 and point your `README.md` at the branch it publishes — with `both`:
 
@@ -259,7 +261,23 @@ use.
 **Two themes.** `quiet` is the default in a terminal: it leaves the sky, the
 grass and the soil unpainted, so the session shows through and the farm sits in
 the terminal instead of covering it. `full` paints a whole little world, and is
-the one for the README image, where there is no session to sit in.
+the [one at the top of this page](#git-farm), where there is no session to sit
+in.
+
+This is the same repository, the same commit and the same farm as the painted
+one above, drawn `quiet` — no sky, no soil, no fence rails, and whatever your
+page is made of showing through between the plants:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)"
+          srcset="https://raw.githubusercontent.com/bright98/git-farm/farm/farm-quiet-dark.svg">
+  <img alt="the same farm drawn in the quiet theme: plants and hairline fences on no background at all"
+       src="https://raw.githubusercontent.com/bright98/git-farm/farm/farm-quiet.svg">
+</picture>
+
+Two files rather than one, because a file cannot ask a reader whether their
+page is light or dark — so `both` writes a palette for each and the `<picture>`
+above picks. The painted theme needs no such pair: it brings its own ground.
 
 **Terminals that are not truecolor.** The palette is seven colours, so the
 mapping is seven lookups done once: the 216-colour cube plus 24 greys at 256

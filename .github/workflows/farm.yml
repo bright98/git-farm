@@ -21,30 +21,43 @@ jobs:
       # ./ rather than bright98/git-farm@<sha>: this repository is the one place
       # the action should be the working copy rather than a release, so a
       # change to it is tested by the next push instead of the next tag.
+      # Both themes, because the README shows both: the painted one is what a
+      # farm looks like, and the quiet one is what it looks like when it has to
+      # share a page. Describing the second in prose while only publishing the
+      # first is how a README ends up lying by omission.
       - uses: ./
-        id: farm
+        id: painted
         with:
           out: farm.svg
-          theme: full # the painted one: its own sky, soil and wooden fences
+          theme: full # its own sky, soil and wooden fences
           since: 5y
           night: auto # stars and a lit lantern when the last commit was after midnight
 
+      - uses: ./
+        id: quiet
+        with:
+          out: farm-quiet.svg
+          theme: both # a light file and a dark one, neither painting a background
+          since: 5y
+          night: auto
+
       # An orphan branch, force-pushed: always exactly one commit holding the
-      # picture and nothing else. Committing it to main instead would grow the
+      # pictures and nothing else. Committing it to main instead would grow the
       # repository forever and fill its history with "update farm".
       - name: publish
         env:
-          SVG: ${{ steps.farm.outputs.svg }}
-          DARK: ${{ steps.farm.outputs.dark-svg }}
+          PAINTED: ${{ steps.painted.outputs.svg }}
+          QUIET: ${{ steps.quiet.outputs.svg }}
+          QUIET_DARK: ${{ steps.quiet.outputs.dark-svg }}
         run: |
           set -euo pipefail
 
           # Which files exist depends on the theme: only "both" writes a dark
-          # one. Naming them by hand fails the job the day somebody changes the
-          # theme, so take them from what the action says it wrote.
-          files=("$SVG")
-          if [ -n "$DARK" ]; then
-            files+=("$DARK")
+          # one. Naming them by hand fails the job the day somebody changes a
+          # theme, so take them from what each step says it wrote.
+          files=("$PAINTED" "$QUIET")
+          if [ -n "$QUIET_DARK" ]; then
+            files+=("$QUIET_DARK")
           fi
 
           git config user.name  "git-farm"
