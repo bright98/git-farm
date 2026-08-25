@@ -57,6 +57,7 @@ func run() error {
 		height     = flag.Int("height", 0, "terminal rows (default: fit the window)")
 		watch      = flag.Bool("watch", false, "open the farm in a window you can walk around in")
 		gifPath    = flag.String("gif", "", "write the history as an animated GIF here")
+		pngPath    = flag.String("png", "", "write the farm as a PNG here, for somewhere that will not take an SVG")
 		frames     = flag.Int("frames", 120, "at most this many frames in the GIF")
 		weather    = flag.Bool("weather", false, "let the sky report how busy the repository was")
 		asList     = flag.Bool("list", false, "print the fields as a table instead of a picture")
@@ -110,6 +111,19 @@ func run() error {
 	// pixels, so it survives the trip.
 	if *gifPath != "" && !flagSet("theme") {
 		theme = &farm.Full
+	}
+
+	// A PNG is pixels too, and loses the same fences and names for the same
+	// reason. It is also usually wanted for a preview card, which wants a
+	// picture at least 1200 wide before it will show a large one — and the
+	// SVG's scale of 6 gives 720.
+	if *pngPath != "" {
+		if !flagSet("theme") {
+			theme = &farm.Full
+		}
+		if !flagSet("scale") {
+			*scale = 10
+		}
 	}
 	profile, ok := farm.ParseProfile(*colorName)
 	if !ok {
@@ -175,6 +189,9 @@ func run() error {
 	}
 	if *out != "" {
 		return writeSVG(r, *out, d)
+	}
+	if *pngPath != "" {
+		return writePNG(r, *pngPath, d)
 	}
 	if *gifPath != "" {
 		return writeGIF(info.Root, cfg, opts, *gifPath, *frames, *weather, d)
@@ -629,6 +646,49 @@ func writeSVG(r *repo.Repo, path string, d drawing) error {
 		} else {
 			fmt.Fprintln(os.Stderr, "unchanged "+f.path)
 		}
+	}
+	return nil
+}
+
+// writePNG is the SVG's picture for somewhere that will not take an SVG: a
+// social preview card, a slide, a chat that pastes an image.
+//
+// Same shape as writeSVG, and for the same reason — the file themes grow
+// bigger plants than a terminal does, and a field too short to plant is one
+// the layout gathers away.
+func writePNG(r *repo.Repo, path string, d drawing) error {
+	cols, rows := 120, 50
+	if d.width > 0 {
+		cols = d.width
+	}
+	if d.height > 0 {
+		rows = d.height
+	}
+
+	scene := farm.FromRepo(r)
+	var buf bytes.Buffer
+	err := scene.WritePNG(&buf, farm.PNGOptions{
+		Theme: d.theme,
+		Cols:  cols,
+		Rows:  rows,
+		Scale: d.scale,
+		Night: d.night.at(r),
+	})
+	if err != nil {
+		return err
+	}
+	if scene.Drawn() == 0 {
+		return fmt.Errorf("nothing to draw: no directory in this repository has enough files for a field")
+	}
+
+	changed, err := writeIfChanged(path, buf.Bytes())
+	if err != nil {
+		return err
+	}
+	if changed {
+		fmt.Fprintln(os.Stderr, "wrote "+path)
+	} else {
+		fmt.Fprintln(os.Stderr, "unchanged "+path)
 	}
 	return nil
 }

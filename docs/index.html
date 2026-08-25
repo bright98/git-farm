@@ -7,7 +7,19 @@
 <meta name="description" content="git-farm reads git log and draws your repository as a pixel farm: a field per directory, a plant per file, a fence where it found tests. In the terminal, in your README, and as a time-lapse.">
 <meta property="og:title" content="git-farm">
 <meta property="og:description" content="A repository drawn as a pixel farm. It looks like a toy, and it is a code health map.">
-<meta property="og:image" content="https://raw.githubusercontent.com/bright98/git-farm/farm/farm.svg">
+<!-- A PNG, and not the farm.svg this page is otherwise made of. Every preview
+     card renderer worth having — LinkedIn, X, Slack, Facebook — takes PNG,
+     JPEG or GIF and silently drops an SVG, which leaves a card with a hole in
+     it. Drawn by git-farm itself in build.sh, at 1900x1000 because a card is
+     cropped to about 1.91:1 and a farm cropped top and bottom loses its sky
+     and its front row. -->
+<meta property="og:image" content="https://bright98.github.io/git-farm/og.png">
+<meta property="og:image:width" content="1900">
+<meta property="og:image:height" content="1000">
+<meta property="og:image:alt" content="a repository drawn as a pixel farm: fenced fields for its directories, planted with one mark per file">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://bright98.github.io/git-farm/">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🌾</text></svg>">
 <style>
   :root {

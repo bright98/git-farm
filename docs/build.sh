@@ -47,6 +47,16 @@ cp docs/index.html "$out/"
 "$bin" --out "$out/quiet-dark-day.svg"    --theme quiet       --night=false .
 "$bin" --out "$out/quiet-dark-night.svg"  --theme quiet       --night=true  .
 
+# The preview card, which is the one picture here that is not for this page.
+# A card renderer takes PNG, JPEG or GIF and silently drops an SVG, so the
+# page's own farm.svg cannot be its og:image.
+#
+# 190x50 rather than the default 120x50: a card is cropped to about 1.91:1,
+# and cropping a farm top and bottom takes the sky off it and the front row
+# with it. Wider costs nothing — the treemap simply draws more of the
+# directories it was already gathering into other/.
+"$bin" --png "$out/og.png" --theme full --night=false --width 190 --height 50 .
+
 "$bin" --gif "$out/history.gif" .
 
 echo "built $out"

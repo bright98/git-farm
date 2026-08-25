@@ -224,6 +224,7 @@ somebody's README without them ever asking for one.
 |---|---|---|
 | `--theme` | `quiet` | `quiet`, `quiet-light`, `full`, or `both`; `--out` defaults to `quiet-light` |
 | `--out` | | write an SVG here instead of drawing in the terminal |
+| `--png` | | write a PNG here, for somewhere that will not take an SVG |
 | `--watch` | | open the farm in a window you can walk around in |
 | `--gif` | | write the history here as an animated GIF |
 | `--frames` | `120` | at most this many frames in the GIF |
@@ -253,6 +254,11 @@ any of them without restating the rest:
   "tests": ["qa/", "*_check.rb"]
 }
 ```
+
+`--png` is for a preview card, a slide, or a chat that pastes an image. It is
+pixels and nothing else, so it has no directory names and only the painted
+theme's fence survives — which is why it draws `full` unless told otherwise.
+The SVG is the better file everywhere that takes one.
 
 `--watch` moves a cursor between fields by direction; `enter` opens one and
 walks its files worst first, `esc` goes back, `t` swaps themes, `n` is night,
