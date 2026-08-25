@@ -347,3 +347,33 @@ func run(dir string, args ...string) (string, error) {
 	}
 	return strings.TrimSpace(string(out)), nil
 }
+
+// Times is when every commit in the window was made, oldest first.
+//
+// No numstat and no subject: this is the cheap pass, and it exists so that a
+// time-lapse can decide how much history a frame covers before it replays any
+// of it. Reading the whole log twice costs less than guessing wrong once.
+func Times(dir string, opts Options) ([]time.Time, error) {
+	args := []string{"log", "--reverse", "--pretty=format:%at"}
+	if opts.Since != "" {
+		args = append(args, "--since="+opts.Since)
+	}
+	if opts.MaxCommits > 0 {
+		args = append(args, "--max-count="+strconv.Itoa(opts.MaxCommits))
+	}
+
+	out, err := run(dir, args...)
+	if err != nil {
+		return nil, fmt.Errorf("git log: %w", err)
+	}
+
+	var times []time.Time
+	for _, line := range strings.Split(out, "\n") {
+		secs, err := strconv.ParseInt(strings.TrimSpace(line), 10, 64)
+		if err != nil {
+			continue
+		}
+		times = append(times, time.Unix(secs, 0).UTC())
+	}
+	return times, nil
+}

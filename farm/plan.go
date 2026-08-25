@@ -46,9 +46,13 @@ func (c Counts) Total() int { return c.Plain + c.Tall + c.Weed + c.Dry + c.Hole 
 // intended direction to be wrong in. A farm that hides the weeds is no use.
 func plant(seed string, c Counts, squares int) []Item {
 	items := make([]Item, 0, squares)
-	if squares <= 0 || c.Total() == 0 {
+	if squares <= 0 {
 		return items
 	}
+	// An empty field still returns a square for every square, all of them bare.
+	// Returning nothing instead used to be the same thing in practice, because
+	// a directory with no files never became a field — until a time-lapse,
+	// where a field exists before anybody has written a file in it.
 
 	kinds := []struct {
 		item Item

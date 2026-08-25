@@ -1,6 +1,7 @@
 package farm
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 
@@ -146,7 +147,7 @@ func TestFitIsRepeatable(t *testing.T) {
 		t.Fatalf("laying out twice gave %d fields, once gave %d", len(twice.Fields), len(once.Fields))
 	}
 	for i := range once.Fields {
-		if once.Fields[i] != twice.Fields[i] {
+		if !reflect.DeepEqual(once.Fields[i], twice.Fields[i]) {
 			t.Errorf("field %d differs: %+v then %+v", i, once.Fields[i], twice.Fields[i])
 		}
 	}
@@ -377,4 +378,30 @@ func TestEveryDrawnFieldCanBePlanted(t *testing.T) {
 			}
 		}
 	}
+}
+
+// A field can be empty. Before the time-lapse it never was — a directory with
+// no files never became a field — so plant returned nothing for one and the
+// drawing code indexed into it anyway. In a history, a field exists from the
+// first frame and is empty until somebody writes a file in it.
+func TestAnEmptyFieldStillFillsItsSquares(t *testing.T) {
+	for _, squares := range []int{1, 6, 40} {
+		got := plant("empty/", Counts{}, squares)
+		if len(got) != squares {
+			t.Errorf("an empty field of %d squares planted %d items", squares, len(got))
+		}
+		for i, it := range got {
+			if it != ItemBare {
+				t.Errorf("square %d of an empty field holds %v", i, it)
+			}
+		}
+	}
+
+	// And the drawing code survives one, which is what actually crashed.
+	c := NewCanvas(80, 48)
+	s := &Scene{
+		Fields: []Field{{Name: "empty/", Kind: Healthy, Fence: FenceUnknown, Weight: 1}},
+		Farmer: -1,
+	}
+	s.Draw(c, Options{Theme: &Quiet, Names: true})
 }

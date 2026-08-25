@@ -56,6 +56,9 @@ func run() error {
 		width      = flag.Int("width", 0, "terminal columns (default: fit the window)")
 		height     = flag.Int("height", 0, "terminal rows (default: fit the window)")
 		watch      = flag.Bool("watch", false, "open the farm in a window you can walk around in")
+		gifPath    = flag.String("gif", "", "write the history as an animated GIF here")
+		frames     = flag.Int("frames", 120, "at most this many frames in the GIF")
+		weather    = flag.Bool("weather", false, "let the sky report how busy the repository was")
 		asList     = flag.Bool("list", false, "print the fields as a table instead of a picture")
 		asJSON     = flag.Bool("json", false, "print the parsed repository as JSON and stop")
 		since      = flag.String("since", "5y", "ignore history older than this, measured back from the newest commit")
@@ -97,6 +100,16 @@ func run() error {
 	// palette, for a page that wants it.
 	if *out != "" && !flagSet("theme") {
 		theme = &farm.QuietLight
+	}
+
+	// A GIF is pixels and nothing else. The quiet themes draw their fence as a
+	// box-drawing character and their names as text, because a terminal has
+	// both and neither costs a pixel — so a quiet farm rendered to pixels
+	// arrives with no fences at all, which is the one claim the README says
+	// must never be wrong in public. The painted theme builds its fence out of
+	// pixels, so it survives the trip.
+	if *gifPath != "" && !flagSet("theme") {
+		theme = &farm.Full
 	}
 	profile, ok := farm.ParseProfile(*colorName)
 	if !ok {
@@ -162,6 +175,9 @@ func run() error {
 	}
 	if *out != "" {
 		return writeSVG(r, *out, d)
+	}
+	if *gifPath != "" {
+		return writeGIF(info.Root, cfg, opts, *gifPath, *frames, *weather, d)
 	}
 	if *watch {
 		return watchFarm(r, d)
@@ -639,4 +655,88 @@ func svgTitle(r *repo.Repo) string {
 	name := filepath.Base(r.Root)
 	return fmt.Sprintf("%s drawn as a farm: %s files in %s directories, %s commits",
 		name, comma(len(r.Files)), comma(len(r.Dirs)), comma(r.Commits))
+}
+
+// writeGIF plays the history into the layout HEAD decided, one frame at a
+// time, and writes the lot as a looping image.
+//
+// The layout is computed once and never again. That is what makes a time-lapse
+// readable rather than dizzying: fields keep their place from the first frame
+// to the last, so the eye follows the crop growing instead of the ground
+// rearranging itself under it.
+func writeGIF(root string, cfg repo.Config, opts repo.Options, path string, frames int, weather bool, d drawing) error {
+	t, err := repo.History(root, cfg, opts, frames)
+	if err != nil {
+		return err
+	}
+
+	// The last frame is HEAD, and HEAD is what the layout comes from. Building
+	// the scene from the final frame rather than from a fresh read keeps the
+	// two in step: every field the history ever had is placed, including the
+	// ones that are empty by the end.
+	last := t.Frames[len(t.Frames)-1]
+	scene := farm.FromFrames(t.Frames)
+
+	cols, rows := 120, 40
+	if d.width > 0 {
+		cols = d.width
+	}
+	if d.height > 0 {
+		rows = d.height
+	}
+
+	var buf bytes.Buffer
+	err = farm.WriteGIF(&buf, len(t.Frames), farm.GIFOptions{
+		Theme: d.theme,
+		Cols:  cols,
+		Rows:  rows,
+		Scale: d.scale / 2,
+		Names: d.names,
+	}, func(i int, c *farm.Canvas) {
+		f := t.Frames[i]
+		scene.Play(f)
+
+		where := make([]string, 0, len(f.Farmers))
+		for _, w := range f.Farmers {
+			where = append(where, w.Dir)
+		}
+		scene.Draw(c, farm.Options{
+			Theme:   d.theme,
+			Names:   d.names,
+			Night:   nightFor(f, weather, d.night == nightOn),
+			Farmers: where,
+		})
+	})
+	if err != nil {
+		return err
+	}
+
+	changed, err := writeIfChanged(path, buf.Bytes())
+	if err != nil {
+		return err
+	}
+	what := "wrote"
+	if !changed {
+		what = "unchanged"
+	}
+	fmt.Fprintf(os.Stderr, "%s %s: %d frames, one per %s, %s to %s\n",
+		what, path, len(t.Frames), t.Cadence,
+		t.Frames[0].When.Format("Jan 2006"), last.When.Format("Jan 2006"))
+	return nil
+}
+
+// nightFor decides whether a frame is drawn after dark.
+//
+// Off unless asked for. The plan is firm about this and it is right: a farm
+// that goes dark because nobody committed for three months puts a "this project
+// is dead" badge on somebody's README without them ever asking for one, and it
+// would be the first thing a visitor saw.
+func nightFor(f repo.Frame, weather, always bool) bool {
+	if always {
+		return true
+	}
+	if !weather {
+		return false
+	}
+	return f.Late || f.Active == 0
 }

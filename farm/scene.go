@@ -26,7 +26,17 @@ type Field struct {
 	Weight float64 // how much of the farm this field gets: its file count
 
 	rect Rect // filled in by Fit
+
+	// dirs is which directories feed this field. One for an ordinary field,
+	// and however many were folded together for other/. A time-lapse needs it:
+	// the layout is fixed at HEAD and every frame pours its own tallies into
+	// these same fields, so each has to know what it is made of.
+	dirs []string
 }
+
+// Dirs is the directories this field stands for. An ordinary field is one
+// directory; other/ is however many the window had no room to draw.
+func (f Field) Dirs() []string { return f.dirs }
 
 // Bounds is where the field ended up, in canvas pixels. It is zero until the
 // scene has been laid out, and stays zero for a field the window had no room
@@ -64,6 +74,16 @@ type Options struct {
 	// NoFarmer leaves the farmer out, for a caller that draws them separately —
 	// which is what animating them without redrawing the whole farm requires.
 	NoFarmer bool
+
+	// Farmers is the directories with somebody standing in them, for a frame of
+	// a time-lapse where several people were working at once. Empty means the
+	// scene's own single farmer, which is what a still picture has.
+	//
+	// Directories rather than field indices, because the fields are rebuilt on
+	// every draw and an index taken before one is an index into the last farm.
+	// Somebody working in a directory this window gathered into other/ stands
+	// in other/, which is where their work went.
+	Farmers []string
 
 	// Cursor is the field a cursor is resting on, counted from one. Its fence
 	// and its name are drawn in the accent, which is the one colour the quiet
@@ -276,15 +296,16 @@ func (s *Scene) Draw(c *Canvas, o Options) {
 		drawGround(c, t, skyH)
 	}
 
+	occupied := s.occupied(o)
 	for i, f := range s.Fields {
 		if f.rect.W == 0 {
 			continue
 		}
-		// The farmer's field keeps a strip of clear soil at the bottom to stand
-		// on. Drawing the farmer over the plants instead leaves a person with a
-		// plant growing through their head.
+		// A field with somebody in it keeps a strip of clear soil at the bottom
+		// for them to stand on. Drawing the farmer over the plants instead
+		// leaves a person with a plant growing through their head.
 		reserve := 0
-		if i == s.Farmer {
+		if occupied[i] {
 			_, _, reserve = farmerFor(t, f.rect)
 		}
 		drawField(c, t, f, o, reserve, i+1 == o.Cursor)
@@ -295,8 +316,31 @@ func (s *Scene) Draw(c *Canvas, o Options) {
 	}
 
 	if !o.NoFarmer {
-		s.drawFarmer(c, t, o)
+		for i := range occupied {
+			s.drawFarmer(c, t, o, i)
+		}
 	}
+}
+
+// occupied is which fields have somebody standing in them, resolved after the
+// layout so that a directory gathered into other/ puts its farmer there.
+func (s *Scene) occupied(o Options) map[int]bool {
+	out := map[int]bool{}
+	if len(o.Farmers) == 0 {
+		if s.Farmer >= 0 {
+			out[s.Farmer] = true
+		}
+		return out
+	}
+	for _, dir := range o.Farmers {
+		for i, f := range s.Fields {
+			if contains(f.dirs, dir) {
+				out[i] = true
+				break
+			}
+		}
+	}
+	return out
 }
 
 // Farmer is where the farmer stands, how far they can walk from there, and the
@@ -313,11 +357,13 @@ type Farmer struct {
 //
 // The SVG writer asks for this too, so that the farmer can be animated over a
 // background that never changes.
-func (s *Scene) FarmerSpot(t *Theme) (Farmer, bool) {
-	if s.Farmer < 0 || s.Farmer >= len(s.Fields) {
+func (s *Scene) FarmerSpot(t *Theme) (Farmer, bool) { return s.farmerIn(t, s.Farmer) }
+
+func (s *Scene) farmerIn(t *Theme, field int) (Farmer, bool) {
+	if field < 0 || field >= len(s.Fields) {
 		return Farmer{}, false
 	}
-	r := s.Fields[s.Farmer].rect
+	r := s.Fields[field].rect
 	stand, walk, room := farmerFor(t, r)
 	if room == 0 {
 		return Farmer{}, false // too small to stand in without trampling it
@@ -334,8 +380,8 @@ func (s *Scene) FarmerSpot(t *Theme) (Farmer, bool) {
 
 // drawFarmer puts the author of the newest commit in the field that commit
 // touched. It is the one part of the picture about a person rather than a file.
-func (s *Scene) drawFarmer(c *Canvas, t *Theme, o Options) {
-	f, ok := s.FarmerSpot(t)
+func (s *Scene) drawFarmer(c *Canvas, t *Theme, o Options, field int) {
+	f, ok := s.farmerIn(t, field)
 	if !ok {
 		return
 	}
@@ -806,4 +852,13 @@ func (s *Scene) Neighbour(from int, d Direction) int {
 		}
 	}
 	return best
+}
+
+func contains(all []string, s string) bool {
+	for _, v := range all {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }

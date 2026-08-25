@@ -63,6 +63,7 @@ committed last, standing where they committed.
 - [How the picture is put together](#how-the-picture-is-put-together) — treemap, sampling, themes
 - [The SVG](#the-svg) — one path per colour, real text, a farmer who walks
 - [Walking around it](#walking-around-it) — `--watch`, a cursor, and what is under it
+- [The time-lapse](#the-time-lapse) — `--gif`, and why the layout never moves
 - [The Action](#the-action) — what the inputs do, and why it publishes to an orphan branch
 - [Refusals](#refusals) — the four cases that error instead of drawing something wrong
 - [Flags](#flags) — every flag, and the config file
@@ -87,6 +88,7 @@ not build one — linux and macOS, Intel and ARM.
 
 ```sh
 git farm --watch                      # walk around it: a cursor, and what is under it
+git farm --gif history.gif            # the whole history, played back
 git farm --theme full                 # the painted version, with sky and soil
 git farm --out farm.svg --theme both  # farm.svg and farm-dark.svg, for a README
 git farm --list                       # the same thing as a table
@@ -174,10 +176,10 @@ inputs do, and why the branch and the pinned SHA are what they are, is in
 
 ## Status
 
-**Phases 0 to 4 of the plan are done: it reads a repository, draws it in the
+**The plan is done, phases 0 to 5: it reads a repository, draws it in the
 terminal, writes it as an SVG, keeps that SVG up to date from a GitHub Action,
-and gives you a farm you can walk around in.** Still to come: the time-lapse
-(phase 5).
+gives you a farm you can walk around in, and plays the whole history back as a
+time-lapse.**
 
 Working on it rather than with it:
 
@@ -422,6 +424,60 @@ cursor in is not navigable.
 It runs on the alt screen, so the session you started it from is still there
 when you quit.
 
+## The time-lapse
+
+`git farm --gif history.gif` plays the repository's history back into the farm.
+
+**The layout never moves.** It is computed once and every frame pours its own
+crop into the same fields, so what changes is what is growing and not where the
+ground is. Re-running the treemap per frame would re-flow the farm every time a
+directory appeared, and the eye would follow the rearranging instead of the
+growing.
+
+**A field for every directory the history ever had**, sized by the biggest it
+ever was rather than by what is left. Sizing from HEAD is the obvious thing and
+it hides the most interesting half of a history: a directory that grew for two
+years and was deleted last month has no field at HEAD at all, so it would never
+appear, grow, or die.
+
+**One frame is not one day.** Most repositories have long quiet periods, so the
+cadence comes from their shape: a frame per commit under 500 commits, a frame
+per active day for a normal one, a week for a very old one. Then a cap —
+`--frames`, 120 by default — because the rule alone gives a fifteen-year-old
+repository nine hundred frames and a file nobody can put in a README. When it
+overflows, whole buckets are merged rather than dropped: a frame covering four
+days is still true, where a frame that skipped three of them is not.
+
+**The people in it are the ones working then**, not everyone who ever worked
+here, capped at eight. One per field: the farm shows where the work is
+happening, and eight people in one directory would be eight sprites in one
+another's way.
+
+**Thresholds come from the whole history, once.** Re-ranking each frame against
+itself would make a file big in one frame and ordinary in the next without
+anything having happened to it, and the farm would flicker with news that is
+not news.
+
+**`--weather` is off, and should stay off on anything public.** With it, a
+quiet stretch draws the farm at night and a commit made after midnight lights
+the farmer's lantern. It is the nicest thing here and the most dangerous: a
+farm that goes dark because nobody committed for three months puts a "this
+project is dead" badge on somebody's README without them ever asking for one,
+and it is the first thing a visitor sees.
+
+**It defaults to the painted theme even though the terminal does not.** A GIF
+is pixels and nothing else, and the quiet themes draw their fence as a
+box-drawing character and their names as text — free in a terminal, and gone
+the moment the picture is pixels. A quiet farm rendered to a GIF arrives with
+no fences at all, which is the one claim this tool must never get wrong in
+public.
+
+**What a GIF does not have is names.** The directory names are a character
+overlay, which a terminal draws and an SVG turns into real text; pixels carry
+neither. A time-lapse shows the shape of a history — fields filling, weeds
+arriving, a directory dying — and for the labels there is the still picture and
+the SVG. Drawing them would mean a pixel font, and that is not built.
+
 ## The Action
 
 The two files to paste are in [Quick start](#quick-start). This is what they do.
@@ -478,6 +534,9 @@ instead:
 | `--no-color` | | shorthand for `--color none`; `NO_COLOR` does the same |
 | `--names` | `true` | directory names on the fields, and who committed last |
 | `--night` | `false` | `true`, `false`, or `auto` — see below |
+| `--gif` | — | write the history here as an animated GIF |
+| `--frames` | `120` | at most this many frames in the GIF |
+| `--weather` | `false` | let the sky report how busy the repository was |
 | `--width`, `--height` | fit the window | |
 | `--list` | | the fields as a table instead of a picture |
 | `--json` | | the parsed repo; the debugging escape hatch |

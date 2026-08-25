@@ -169,6 +169,20 @@ type accumulator struct {
 	touchedLocal time.Time
 	lastAuthor   string
 	lastPaths    []string
+
+	// work is one entry per commit that changed something: who, when, and
+	// where. The still picture needs only the newest of these; a time-lapse
+	// needs all of them, because every frame has its own people in it.
+	work []Work
+}
+
+// Work is one commit that changed a file: who made it, when, and the field it
+// landed in.
+type Work struct {
+	Author string
+	When   time.Time
+	Path   string // a file the commit touched; the field is decided later, from the depth
+	Late   bool   // made in the small hours, by the author's own clock
 }
 
 type stat struct {
@@ -192,6 +206,15 @@ func (a *accumulator) add(c gitlog.Commit) error {
 	}
 	if c.When.After(a.last) || a.last.IsZero() {
 		a.last = c.When
+	}
+	if len(c.Changes) > 0 {
+		h := c.Local.Hour()
+		a.work = append(a.work, Work{
+			Author: c.Author,
+			When:   c.When,
+			Path:   c.Changes[0].Path,
+			Late:   h >= 0 && h < 6,
+		})
 	}
 	if len(c.Changes) > 0 && (c.When.After(a.touched) || a.touched.IsZero()) {
 		a.touched, a.touchedLocal = c.When, c.Local
