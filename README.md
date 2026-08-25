@@ -2,17 +2,17 @@
 
 A repository drawn as a pixel farm, in the terminal and in your README.
 
-<!-- Drawn by this repository's own farm workflow, and published to the orphan
-     farm branch. Not committed here: see The Action for why. -->
-<picture>
-  <source media="(prefers-color-scheme: dark)"
-          srcset="https://raw.githubusercontent.com/bright98/git-farm/farm/farm-dark.svg">
-  <img alt="git-farm's own repository drawn as a farm: fields for its directories, fenced where tests were found"
-       src="https://raw.githubusercontent.com/bright98/git-farm/farm/farm.svg">
-</picture>
+<!-- Drawn by this repository's own farm workflow and published to the orphan
+     farm branch. The full theme paints its own sky, so it needs one file
+     rather than a light and a dark one. See The Action for why it is not
+     committed here. -->
+<img alt="git-farm's own repository drawn as a farm: fenced fields for its directories, planted with one mark per file"
+     src="https://raw.githubusercontent.com/bright98/git-farm/farm/farm.svg">
 
 *This repository, drawn by itself on every push. The small figure is whoever
-committed last, standing in the directory they committed to, and they walk.*
+committed last, standing in the directory they committed to, and they walk. If
+that commit was made after their own midnight, the farm is drawn under stars
+and they carry a lantern.*
 
 ```
 git farm
@@ -117,24 +117,38 @@ jobs:
           fetch-depth: 0  # git-farm reads the whole history
 
       - uses: bright98/git-farm@<commit-sha>
+        id: farm
         with:
           out: farm.svg
-          theme: both     # writes farm.svg and farm-dark.svg
+          theme: both     # or full, for the painted one — see below
           since: 5y
 
       - name: publish
+        env:
+          SVG: ${{ steps.farm.outputs.svg }}
+          DARK: ${{ steps.farm.outputs.dark-svg }}
         run: |
           set -euo pipefail
+          files=("$SVG")
+          if [ -n "$DARK" ]; then
+            files+=("$DARK")
+          fi
           git config user.name  "git-farm"
           git config user.email "git-farm@users.noreply.github.com"
           git checkout --orphan farm
           git rm -rf --cached . > /dev/null
-          git add -f farm.svg farm-dark.svg
+          git add -f "${files[@]}"
           git commit -m "farm $(date -u +%F)"
           git push -f origin farm
 ```
 
-and point your `README.md` at the branch it publishes:
+**Two looks.** `both` writes a light file and a dark one, painting no
+background, so the farm sits *in* your README and borrows the page. `full`
+paints its own world — sky, clouds, tilled soil, wooden fences — and writes a
+single file that looks the same on any page. The picture at the top of this
+README is `full`; run `git farm --theme quiet` in a terminal to see the other.
+
+and point your `README.md` at the branch it publishes — with `both`:
 
 ```markdown
 <picture>
@@ -142,6 +156,12 @@ and point your `README.md` at the branch it publishes:
           srcset="https://raw.githubusercontent.com/USER/REPO/farm/farm-dark.svg">
   <img alt="the farm" src="https://raw.githubusercontent.com/USER/REPO/farm/farm.svg">
 </picture>
+```
+
+or, with `full`, the one file is the whole picture:
+
+```markdown
+<img alt="the farm" src="https://raw.githubusercontent.com/USER/REPO/farm/farm.svg">
 ```
 
 Run it once by hand from the Actions tab, and the picture is there. What the

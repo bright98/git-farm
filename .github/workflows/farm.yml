@@ -22,21 +22,35 @@ jobs:
       # the action should be the working copy rather than a release, so a
       # change to it is tested by the next push instead of the next tag.
       - uses: ./
+        id: farm
         with:
           out: farm.svg
-          theme: both
+          theme: full # the painted one: its own sky, soil and wooden fences
           since: 5y
+          night: auto # stars and a lit lantern when the last commit was after midnight
 
-      # An orphan branch, force-pushed: always exactly one commit holding two
-      # files. Committing the picture to main instead would grow the repository
-      # forever and fill its history with "update farm".
+      # An orphan branch, force-pushed: always exactly one commit holding the
+      # picture and nothing else. Committing it to main instead would grow the
+      # repository forever and fill its history with "update farm".
       - name: publish
+        env:
+          SVG: ${{ steps.farm.outputs.svg }}
+          DARK: ${{ steps.farm.outputs.dark-svg }}
         run: |
           set -euo pipefail
+
+          # Which files exist depends on the theme: only "both" writes a dark
+          # one. Naming them by hand fails the job the day somebody changes the
+          # theme, so take them from what the action says it wrote.
+          files=("$SVG")
+          if [ -n "$DARK" ]; then
+            files+=("$DARK")
+          fi
+
           git config user.name  "git-farm"
           git config user.email "git-farm@users.noreply.github.com"
           git checkout --orphan farm
           git rm -rf --cached . > /dev/null
-          git add -f farm.svg farm-dark.svg
+          git add -f "${files[@]}"
           git commit -m "farm $(date -u +%F)"
           git push -f origin farm
